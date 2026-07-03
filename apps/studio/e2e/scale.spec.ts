@@ -34,3 +34,29 @@ test("scale generator fills missing steps deterministically, undoable", async ({
   await page.getByTestId("undo").click();
   await expect(page.getByTestId("token-colors.blue.700")).not.toBeVisible();
 });
+
+test("a single anchor synthesizes a full ramp with derived endpoints", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-token").click();
+  await page.getByTestId("new-token-path").fill("brand.seed.500");
+  await page.getByTestId("new-token-value").fill("#2563eb");
+  await page.getByTestId("create-token").click();
+
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByTestId("palette-scale").click();
+  await page.getByTestId("scale-group-input").fill("brand.seed");
+
+  // Derived endpoints are disclosed; the full default ramp is generatable.
+  await expect(page.getByTestId("scale-synthesized")).toContainText("derived from the anchor");
+  await expect(page.getByTestId("scale-preview")).toContainText("brand.seed.50");
+  await expect(page.getByTestId("scale-preview")).toContainText("brand.seed.950");
+  await expect(page.getByTestId("scale-apply")).toContainText("Generate 10 token(s)");
+
+  // An explicit darkest end overrides the derived one.
+  await page.getByTestId("scale-dark-end").fill("#000000");
+  await expect(page.getByTestId("scale-synthesized")).toContainText("dark #000000");
+
+  await page.getByTestId("scale-apply").click();
+  await expect(page.getByTestId("token-brand.seed.50")).toBeVisible();
+  await expect(page.getByTestId("token-brand.seed.950")).toBeVisible();
+});

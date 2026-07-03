@@ -176,13 +176,16 @@
 
     <h2 id="scales">4b. Generating color scales</h2>
     <p>
-      Have anchors like <code>blue.100</code>, <code>blue.500</code>, <code>blue.900</code> and need
-      the steps between? Open <strong>Generate scale steps…</strong> from the command palette
-      (<kbd>⌘K</kbd>). Point it at the group, review the preview — anchors are marked and never
-      touched — and apply. Interpolation happens in OKLCH (perceptually uniform), it's fully
-      deterministic (same anchors, same results, no AI), one undo removes the whole batch, and
-      generated tokens carry <code>lineage</code> metadata recording the generator and its anchor
-      inputs.
+      Open <strong>Generate scale steps…</strong> from the command palette (<kbd>⌘K</kbd>) and point
+      it at a group with numeric color anchors. With several anchors
+      (<code>blue.100/500/900</code>), the missing steps between them are interpolated. With just
+      <em>one</em> anchor, a full ramp is synthesized from near-white to near-dark around it,
+      keeping its hue — the derived endpoints are shown in the dialog, and the optional
+      <em>lightest/darkest end</em> fields let you set the range yourself (they also unlock steps
+      like 50/950 beyond your outermost anchors). Review the preview — anchors are marked and never
+      touched — then apply. Everything is OKLCH-interpolated, fully deterministic (same inputs, same
+      results, no AI), one undo removes the whole batch, and generated tokens carry
+      <code>lineage</code> metadata recording the generator and its anchor inputs.
     </p>
 
     <h2 id="themes">5. Themes and theme groups</h2>

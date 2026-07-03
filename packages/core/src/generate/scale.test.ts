@@ -84,10 +84,48 @@ describe("planColorScale", () => {
     expect(plan.generated.map((entry) => entry.step)).toEqual([250, 750]);
   });
 
-  it("requires two numeric color anchors and a real set", () => {
+  it("a single anchor synthesizes a full ramp from near-white to near-dark", () => {
+    const single = doc(
+      '{ "colors": { "$type": "color", "blue": { "600": { "$value": "#2563eb" } } } }',
+    );
+    const plan = planColorScale(single, "global", "colors.blue");
+    // Every default step except the anchor itself is generated.
+    expect(plan.generated.map((entry) => entry.step)).toEqual([
+      50, 100, 200, 300, 400, 500, 700, 800, 900, 950,
+    ]);
+    expect(plan.skipped).toEqual([]);
+    expect(plan.anchors).toHaveLength(1);
+    expect(plan.synthesized?.lightEnd).toBeDefined();
+    expect(plan.synthesized?.darkEnd).toBeDefined();
+    // Monotonic against white: 50 is lightest, 950 darkest.
+    const byStep = new Map(plan.generated.map((entry) => [entry.step, entry.value]));
+    const contrastOf = (step: number) => wcagContrast(byStep.get(step) ?? "#fff", "#ffffff");
+    expect(contrastOf(50)).toBeLessThan(contrastOf(300));
+    expect(contrastOf(700)).toBeLessThan(contrastOf(950));
+    // Deterministic.
+    expect(planColorScale(single, "global", "colors.blue").generated).toEqual(plan.generated);
+  });
+
+  it("explicit light/dark ends extend the range and are validated", () => {
+    const plan = planColorScale(doc(ANCHORS), "global", "colors.blue", {
+      lightEnd: "#ffffff",
+      darkEnd: "#000000",
+    });
+    // 50 and 950 are now in range instead of skipped.
+    expect(plan.generated.map((entry) => entry.step)).toEqual([
+      50, 200, 300, 400, 600, 700, 800, 950,
+    ]);
+    expect(plan.skipped).toEqual([]);
+    expect(plan.synthesized).toEqual({ lightEnd: "#ffffff", darkEnd: "#000000" });
+    expect(() =>
+      planColorScale(doc(ANCHORS), "global", "colors.blue", { lightEnd: "16px" }),
+    ).toThrow(/lightest end "16px" is not a color/);
+  });
+
+  it("requires at least one numeric color anchor and a real set", () => {
     expect(() =>
       planColorScale(
-        doc('{ "colors": { "$type": "color", "blue": { "500": { "$value": "#3b82f6" } } } }'),
+        doc('{ "colors": { "$type": "color", "blue": {} } }'),
         "global",
         "colors.blue",
       ),
@@ -107,8 +145,20 @@ describe("planColorScale", () => {
         }
       }
     }`);
-    expect(() => planColorScale(broken, "global", "colors.blue")).toThrow(
-      /found only 600.*Excluded: 500 \(resolves to "32px".*raw value is "\{spacing\.lg\}"/,
+    // With one valid anchor the plan proceeds (single-anchor ramp), but the
+    // exclusion is reported so the UI can warn about it.
+    const plan = planColorScale(broken, "global", "colors.blue");
+    expect(plan.anchors.map((anchor) => anchor.step)).toEqual([600]);
+    expect(plan.excludedAnchors[0]).toMatch(
+      /500 \(resolves to "32px".*raw value is "\{spacing\.lg\}"/,
+    );
+    // With zero valid anchors, the exclusions land in the error itself.
+    const allBroken = doc(`{
+      "spacing": { "$type": "dimension", "lg": { "$value": "32px" } },
+      "colors": { "$type": "color", "blue": { "500": { "$value": "{spacing.lg}" } } }
+    }`);
+    expect(() => planColorScale(allBroken, "global", "colors.blue")).toThrow(
+      /No numeric color anchors.*Excluded: 500/,
     );
   });
 

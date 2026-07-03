@@ -23,12 +23,14 @@ export function ScaleDialog({ onClose }: { onClose: () => void }) {
   const initialGroup = selection ? selection.path.slice(0, selection.path.lastIndexOf(".")) : "";
   const [groupPath, setGroupPath] = useState(initialGroup);
   const [stepsText, setStepsText] = useState(DEFAULT_SCALE_STEPS.join(", "));
+  const [lightEnd, setLightEnd] = useState("");
+  const [darkEnd, setDarkEnd] = useState("");
 
   const setName = selection?.set ?? activeSet;
 
   const preview = useMemo(() => {
     if (setName === undefined || groupPath.trim() === "") {
-      return { plan: undefined, error: "Pick a group with at least two numeric color anchors." };
+      return { plan: undefined, error: "Pick a group with at least one numeric color anchor." };
     }
     const steps = stepsText
       .split(",")
@@ -36,7 +38,11 @@ export function ScaleDialog({ onClose }: { onClose: () => void }) {
       .filter((step) => Number.isInteger(step) && step > 0);
     try {
       return {
-        plan: planColorScale(document, setName, groupPath.trim(), { steps }),
+        plan: planColorScale(document, setName, groupPath.trim(), {
+          steps,
+          lightEnd: lightEnd.trim() === "" ? undefined : lightEnd.trim(),
+          darkEnd: darkEnd.trim() === "" ? undefined : darkEnd.trim(),
+        }),
         error: undefined,
       };
     } catch (planError) {
@@ -50,7 +56,7 @@ export function ScaleDialog({ onClose }: { onClose: () => void }) {
             : String(planError);
       return { plan: undefined, error: message };
     }
-  }, [document, setName, groupPath, stepsText]);
+  }, [document, setName, groupPath, stepsText, lightEnd, darkEnd]);
 
   const apply = () => {
     const plan = preview.plan;
@@ -95,7 +101,52 @@ export function ScaleDialog({ onClose }: { onClose: () => void }) {
         )}
       </Field>
 
+      <div className="editor-grid-2">
+        <Field label="Lightest end (optional)">
+          {(id) => (
+            <TextInput
+              id={id}
+              mono
+              placeholder="auto with one anchor"
+              value={lightEnd}
+              data-testid="scale-light-end"
+              onChange={(event) => {
+                setLightEnd(event.target.value);
+              }}
+            />
+          )}
+        </Field>
+        <Field label="Darkest end (optional)">
+          {(id) => (
+            <TextInput
+              id={id}
+              mono
+              placeholder="auto with one anchor"
+              value={darkEnd}
+              data-testid="scale-dark-end"
+              onChange={(event) => {
+                setDarkEnd(event.target.value);
+              }}
+            />
+          )}
+        </Field>
+      </div>
+
       {preview.error !== undefined && <p className="editor-error">{preview.error}</p>}
+      {preview.plan?.synthesized && (
+        <p className="usage-empty" data-testid="scale-synthesized">
+          Range endpoints{" "}
+          {preview.plan.synthesized.lightEnd !== undefined &&
+            `light ${preview.plan.synthesized.lightEnd}`}
+          {preview.plan.synthesized.lightEnd !== undefined &&
+          preview.plan.synthesized.darkEnd !== undefined
+            ? " · "
+            : ""}
+          {preview.plan.synthesized.darkEnd !== undefined &&
+            `dark ${preview.plan.synthesized.darkEnd}`}{" "}
+          — derived from the anchor's hue; override above.
+        </p>
+      )}
       {preview.plan && (
         <div className="scale-preview" data-testid="scale-preview">
           {[...preview.plan.anchors, ...preview.plan.generated]
@@ -113,7 +164,12 @@ export function ScaleDialog({ onClose }: { onClose: () => void }) {
           {preview.plan.skipped.length > 0 && (
             <p className="usage-empty">
               Skipped {preview.plan.skipped.map((entry) => entry.step).join(", ")} — outside the
-              anchor range.
+              anchor range. Set a lightest/darkest end above to include them.
+            </p>
+          )}
+          {preview.plan.excludedAnchors.length > 0 && (
+            <p className="editor-error">
+              Not used as anchors: {preview.plan.excludedAnchors.join("; ")}
             </p>
           )}
         </div>

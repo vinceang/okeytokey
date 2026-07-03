@@ -1,4 +1,6 @@
-import { interpolate, type Color as CuloriColor } from "culori";
+import { converter, interpolate, type Color as CuloriColor } from "culori";
+
+const toOklch = converter("oklch");
 
 import { formatColor, isColor, isInSrgbGamut, parseColor } from "../color/color.js";
 import { TokenParseError } from "../errors.js";
@@ -39,6 +41,10 @@ export interface ScalePlan {
   readonly generated: readonly ScaleEntry[];
   /** Steps requested but not generatable (outside the anchor range). */
   readonly skipped: readonly { step: number; reason: string }[];
+  /** Virtual range endpoints in use (single-anchor mode or explicit ends). */
+  readonly synthesized?: { readonly lightEnd?: string; readonly darkEnd?: string };
+  /** Numeric children that could not serve as anchors, with reasons. */
+  readonly excludedAnchors: readonly string[];
   /** Apply the plan, returning the new document. */
   readonly apply: () => TokenDocument;
 }
@@ -46,6 +52,13 @@ export interface ScalePlan {
 export interface ScaleOptions {
   /** Steps to ensure. Default {@link DEFAULT_SCALE_STEPS}. */
   readonly steps?: readonly number[];
+  /**
+   * Explicit lightest end of the ramp (any CSS color). Placed at virtual
+   * position 0, enabling steps below the lowest anchor.
+   */
+  readonly lightEnd?: string;
+  /** Explicit darkest end, placed at virtual position 1000. */
+  readonly darkEnd?: string;
 }
 
 class ScaleError extends TokenParseError {
@@ -106,33 +119,78 @@ export function planColorScale(
   }
 
   anchorNodes.sort((a, b) => a.step - b.step);
-  if (anchorNodes.length < 2) {
-    const found =
-      anchorNodes.length === 0
-        ? "none found"
-        : `found only ${anchorNodes.map((anchor) => String(anchor.step)).join(", ")}`;
+  if (anchorNodes.length === 0) {
     fail(
       setName,
       groupPath,
-      `Need at least two numeric color anchors in "${groupPath}" — ${found}.` +
+      `No numeric color anchors in "${groupPath}".` +
         (excluded.length > 0 ? ` Excluded: ${excluded.join("; ")}.` : ""),
     );
   }
 
-  const [first] = anchorNodes;
-  const last = anchorNodes.at(-1);
-  if (!first || !last) {
-    fail(setName, groupPath, "Anchor detection failed unexpectedly");
-  }
-  const existingSteps = new Set(anchorNodes.map((anchor) => anchor.step));
-  const steps = [...new Set(options.steps ?? DEFAULT_SCALE_STEPS)].sort((a, b) => a - b);
-
+  // Real anchors feed the preview and lineage before virtual endpoints join.
   const anchors: ScaleEntry[] = anchorNodes.map((anchor) => ({
     path: anchor.token.pathString,
     step: anchor.step,
     value: anchor.css,
     anchor: true,
   }));
+  const existingSteps = new Set(anchorNodes.map((anchor) => anchor.step));
+
+  // Range endpoints. With one anchor (or explicit ends), synthesize virtual
+  // endpoints at positions 0 and 1000: near-white and near-dark in OKLCH,
+  // hue taken from the seed — deterministic, so still generator territory.
+  const [seed] = anchorNodes;
+  if (!seed) {
+    fail(setName, groupPath, "Anchor detection failed unexpectedly");
+  }
+  const seedOklch = toOklch(seed.color);
+  const singleAnchor = anchorNodes.length === 1;
+  const synthesized: { lightEnd?: string; darkEnd?: string } = {};
+
+  const parseEnd = (input: string, label: string): CuloriColor => {
+    if (!isColor(input)) {
+      fail(setName, groupPath, `The ${label} end ${JSON.stringify(input)} is not a color`);
+    }
+    return parseColor(input).color;
+  };
+  const cssOf = (color: CuloriColor): string =>
+    isInSrgbGamut({ color, input: "" })
+      ? formatColor({ color, input: "" }, "hex")
+      : formatColor({ color, input: "" }, "oklch");
+
+  if (options.lightEnd !== undefined || singleAnchor) {
+    const color =
+      options.lightEnd !== undefined
+        ? parseEnd(options.lightEnd, "lightest")
+        : ({
+            mode: "oklch",
+            l: 0.985,
+            c: Math.min(seedOklch.c, 0.02),
+            h: seedOklch.h,
+          } as CuloriColor);
+    synthesized.lightEnd = cssOf(color);
+    anchorNodes.unshift({ step: 0, token: seed.token, color, css: synthesized.lightEnd });
+  }
+  if (options.darkEnd !== undefined || singleAnchor) {
+    const color =
+      options.darkEnd !== undefined
+        ? parseEnd(options.darkEnd, "darkest")
+        : ({ mode: "oklch", l: 0.17, c: seedOklch.c * 0.55, h: seedOklch.h } as CuloriColor);
+    synthesized.darkEnd = cssOf(color);
+    anchorNodes.push({ step: 1000, token: seed.token, color, css: synthesized.darkEnd });
+  }
+
+  const [first] = anchorNodes;
+  const last = anchorNodes.at(-1);
+  if (!first || !last || first === last) {
+    fail(
+      setName,
+      groupPath,
+      "Only one anchor and no range: set a lightest/darkest end, or add a second anchor",
+    );
+  }
+  const steps = [...new Set(options.steps ?? DEFAULT_SCALE_STEPS)].sort((a, b) => a - b);
   const generated: ScaleEntry[] = [];
   const skipped: { step: number; reason: string }[] = [];
 
@@ -172,5 +230,17 @@ export function planColorScale(
     return withSet(document, nextSet);
   };
 
-  return { groupPath, setName, anchors, generated, skipped, apply };
+  return {
+    groupPath,
+    setName,
+    anchors,
+    generated,
+    skipped,
+    synthesized:
+      synthesized.lightEnd !== undefined || synthesized.darkEnd !== undefined
+        ? synthesized
+        : undefined,
+    excludedAnchors: excluded,
+    apply,
+  };
 }
