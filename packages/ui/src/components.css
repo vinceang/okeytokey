@@ -60,6 +60,7 @@
 .okey-input,
 .okey-select {
   width: 100%;
+  min-width: 0;
   padding: 6px var(--space-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);

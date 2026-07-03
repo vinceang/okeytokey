@@ -49,6 +49,12 @@ test("AI provider settings: off by default, presets, connection doctor, persiste
   await page.getByTestId("ai-preset-ollama").click();
   await expect(page.getByTestId("ai-base-url")).toHaveValue("http://localhost:11434/v1");
   await expect(page.getByTestId("ai-privacy")).toContainText("never leaves");
+  // The prerequisites are stated, with a copyable command for this origin.
+  await expect(page.getByText("ollama.com")).toBeVisible();
+  await expect(page.getByTestId("ai-setup-command")).toContainText(
+    'OLLAMA_ORIGINS="http://localhost:',
+  );
+  await expect(page.getByTestId("ai-setup-command")).toContainText("ollama serve");
   await page.getByTestId("ai-test-connection").click();
   await expect(page.getByTestId("ai-connection-result")).toContainText("✓");
   await expect(page.getByTestId("ai-connection-result")).toContainText("2 model(s)");

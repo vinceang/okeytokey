@@ -47,6 +47,31 @@ function privacyNote(settings: AiSettings): string {
   }
 }
 
+/** The exact launch command for this app's origin, one click to copy. */
+function SetupCommand({ template }: { template: string }) {
+  const command = template.replace("{origin}", window.location.origin);
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="ai-setup-command">
+      <code data-testid="ai-setup-command">{command}</code>
+      <Button
+        variant="ghost"
+        data-testid="ai-copy-command"
+        onClick={() => {
+          void navigator.clipboard.writeText(command).then(() => {
+            setCopied(true);
+            setTimeout(() => {
+              setCopied(false);
+            }, 1500);
+          });
+        }}
+      >
+        {copied ? "Copied" : "Copy"}
+      </Button>
+    </div>
+  );
+}
+
 export function AiProviderDialog({ onClose }: { onClose: () => void }) {
   const [settings, setSettings] = useState(loadAiSettings);
   const [result, setResult] = useState<ConnectionResult>();
@@ -117,20 +142,25 @@ export function AiProviderDialog({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           {activePreset && <p className="ai-preset-note">{activePreset.note}</p>}
+          {activePreset?.setupCommandTemplate !== undefined && (
+            <SetupCommand template={activePreset.setupCommandTemplate} />
+          )}
           <div className="editor-grid-2">
-            <Field label="Base URL">
-              {(id) => (
-                <TextInput
-                  id={id}
-                  mono
-                  value={settings.baseUrl}
-                  data-testid="ai-base-url"
-                  onChange={(event) => {
-                    update({ baseUrl: event.target.value });
-                  }}
-                />
-              )}
-            </Field>
+            <div className="span-2">
+              <Field label="Base URL">
+                {(id) => (
+                  <TextInput
+                    id={id}
+                    mono
+                    value={settings.baseUrl}
+                    data-testid="ai-base-url"
+                    onChange={(event) => {
+                      update({ baseUrl: event.target.value });
+                    }}
+                  />
+                )}
+              </Field>
+            </div>
             <Field label="Model">
               {(id) => (
                 <TextInput
@@ -144,7 +174,7 @@ export function AiProviderDialog({ onClose }: { onClose: () => void }) {
                 />
               )}
             </Field>
-            <Field label="API key (only if the endpoint needs one)">
+            <Field label="API key (optional)">
               {(id) => (
                 <TextInput
                   id={id}
