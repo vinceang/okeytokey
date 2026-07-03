@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
   expandThemeMatrix,
@@ -10,7 +10,7 @@ import {
 } from "@okeytokey/core";
 import { Button } from "@okeytokey/ui";
 
-import { cmdAddSet, cmdImportSet, cmdRemoveSet } from "../state/commands.js";
+import { cmdAddSet, cmdImportSet, cmdRemoveSet, cmdRenameSet } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 import { ThemeDialog } from "./dialogs.js";
@@ -22,6 +22,63 @@ function download(filename: string, text: string) {
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+/**
+ * A kebab (⋮) menu for a sidebar row. Destructive and out-of-the-way actions
+ * live here rather than as bare inline buttons, so a single misclick can't
+ * wipe a token set. Children receive `close` to dismiss the menu after acting.
+ */
+function RowMenu({
+  label,
+  testId,
+  children,
+}: {
+  label: string;
+  testId?: string;
+  children: (close: () => void) => ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const close = () => {
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="row-menu">
+      <Button
+        variant="ghost"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={label}
+        title={label}
+        data-testid={testId}
+        onClick={() => {
+          setOpen((value) => !value);
+        }}
+      >
+        ⋮
+      </Button>
+      {open && (
+        <>
+          <div className="row-menu-backdrop" onClick={close} />
+          <div className="row-menu-popover" role="menu">
+            {children(close)}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function Sidebar() {
@@ -110,7 +167,7 @@ export function Sidebar() {
           </Button>
         </header>
         {[...tokenDocument.sets.values()].map((set) => (
-          <div className="editor-row" key={set.name}>
+          <div className="sidebar-row" key={set.name}>
             <button
               type="button"
               className="sidebar-item"
@@ -123,18 +180,62 @@ export function Sidebar() {
               {set.name}
               <span className="count">{set.tokens.size}</span>
             </button>
-            <Button
-              variant="ghost"
-              title={`Delete set ${set.name}`}
-              onClick={() => {
-                if (window.confirm(`Delete set "${set.name}"?`)) {
-                  execute(cmdRemoveSet(set.name));
-                  if (activeSet === set.name) setActiveSet(undefined);
-                }
-              }}
-            >
-              ×
-            </Button>
+            <RowMenu label={`Actions for set ${set.name}`} testId={`set-menu-${set.name}`}>
+              {(close) => (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item"
+                    data-testid={`set-rename-${set.name}`}
+                    onClick={() => {
+                      close();
+                      const next = window.prompt(`Rename set "${set.name}"`, set.name)?.trim();
+                      if (!next || next === set.name) return;
+                      try {
+                        execute(cmdRenameSet(set.name, next));
+                        if (activeSet === set.name) setActiveSet(next);
+                      } catch (error) {
+                        window.alert(error instanceof Error ? error.message : String(error));
+                      }
+                    }}
+                  >
+                    Rename…
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item"
+                    data-testid={`set-export-${set.name}`}
+                    onClick={() => {
+                      close();
+                      download(`${set.name}.json`, serializeTokenSet(set));
+                    }}
+                  >
+                    Export JSON
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item row-menu-item--danger"
+                    data-testid={`set-delete-${set.name}`}
+                    onClick={() => {
+                      close();
+                      if (
+                        window.confirm(
+                          `Delete set "${set.name}" and its ${String(set.tokens.size)} token(s)? You can undo this.`,
+                        )
+                      ) {
+                        execute(cmdRemoveSet(set.name));
+                        if (activeSet === set.name) setActiveSet(undefined);
+                      }
+                    }}
+                  >
+                    Delete set…
+                  </button>
+                </>
+              )}
+            </RowMenu>
           </div>
         ))}
       </div>
@@ -169,7 +270,7 @@ export function Sidebar() {
           No theme
         </button>
         {themes.map((theme) => (
-          <div className="editor-row" key={theme.name}>
+          <div className="sidebar-row" key={theme.name}>
             <button
               type="button"
               className="sidebar-item"
@@ -182,16 +283,41 @@ export function Sidebar() {
               {theme.name}
               {theme.group !== undefined && <span className="count">{theme.group}</span>}
             </button>
-            <Button
-              variant="ghost"
-              title={`Edit theme ${theme.name}`}
-              data-testid={`edit-theme-${theme.name}`}
-              onClick={() => {
-                setEditingTheme(theme);
-              }}
-            >
-              ⚙
-            </Button>
+            <RowMenu label={`Actions for theme ${theme.name}`} testId={`theme-menu-${theme.name}`}>
+              {(close) => (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item"
+                    data-testid={`edit-theme-${theme.name}`}
+                    onClick={() => {
+                      close();
+                      setEditingTheme(theme);
+                    }}
+                  >
+                    Edit sets…
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item row-menu-item--danger"
+                    data-testid={`delete-theme-${theme.name}`}
+                    onClick={() => {
+                      close();
+                      if (
+                        window.confirm(`Delete theme "${theme.name}"? Your tokens are untouched.`)
+                      ) {
+                        setThemes(themes.filter((candidate) => candidate.name !== theme.name));
+                        if (activeTheme === theme.name) setActiveTheme(undefined);
+                      }
+                    }}
+                  >
+                    Delete theme…
+                  </button>
+                </>
+              )}
+            </RowMenu>
           </div>
         ))}
       </div>

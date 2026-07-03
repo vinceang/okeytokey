@@ -87,6 +87,74 @@ a.sidebar-item {
   color: var(--text-tertiary);
 }
 
+/* A set/theme row: the item flexes, the kebab trigger stays on the same line
+   and never wraps below (a plain flex row, not the wrapping .editor-row). */
+.sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sidebar-row > .sidebar-item {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.row-menu {
+  position: relative;
+  flex: none;
+}
+
+.row-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+}
+
+.row-menu-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1);
+  background: var(--surface-panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+
+.row-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: 400 var(--text-md) var(--font-sans);
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.row-menu-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.row-menu-item--danger {
+  color: var(--danger-600);
+}
+
+.row-menu-item--danger:hover {
+  background: var(--warning-bg);
+  color: var(--danger-600);
+}
+
 /* --- Main list ------------------------------------------------------------ */
 .studio-main {
   display: flex;
