@@ -158,6 +158,7 @@ export function App() {
       {dialog === "new-token" && currentSet && (
         <NewTokenDialog
           setName={currentSet.name}
+          resolver={resolver}
           onClose={() => {
             openDialog(undefined);
           }}

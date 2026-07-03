@@ -45,6 +45,11 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
   source files; the global "I want rem in my shipped CSS regardless of authoring
   unit" belongs in the export pipeline as a Style-Dictionary-style transform with a
   configurable root size.
+- **Google Fonts live previews + full catalog** — the New Token dialog bundles a
+  curated static family list (offline, no key). Live previews mean loading
+  stylesheets from fonts.googleapis.com; the full searchable catalog needs the
+  Google Fonts metadata API and a key. Both deferred pending a decision on the
+  key and the network posture.
 - **Type/spacing scale generators** — extend Phase 7.0's color Scale Generator to
   modular type scales and spacing ramps.
 - **Additional sync providers** — GitLab / Azure DevOps / Bitbucket behind the

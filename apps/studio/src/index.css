@@ -343,6 +343,16 @@ a.sidebar-item {
   z-index: 10;
   top: calc(100% + var(--space-1));
   inset-inline: 0;
+}
+
+/* Inside dialogs the popover flows inline — an absolute overlay would hang
+   below the centered dialog, off-viewport with nothing to scroll. */
+.alias-picker--inline .alias-popover {
+  position: static;
+  border: 1px solid var(--line-strong);
+}
+
+.alias-popover {
   display: flex;
   flex-direction: column;
   max-height: 300px;
@@ -778,6 +788,66 @@ a.sidebar-item {
   color: var(--text-secondary);
 }
 
+.suggestion-chips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.suggestion-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+  cursor: pointer;
+  text-align: left;
+}
+
+.suggestion-chip:hover {
+  background: var(--surface-sunken);
+}
+
+.suggestion-chip code {
+  font: 500 var(--text-sm) var(--font-mono);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.suggestion-reason {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.value-with-picker {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.value-with-picker .okey-input {
+  flex: 1;
+  width: auto;
+}
+
+.new-token-color-picker {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+  cursor: pointer;
+}
+
 .unit-base-note {
   font-size: var(--text-sm);
   color: var(--text-tertiary);
@@ -852,6 +922,8 @@ a.sidebar-item {
   gap: var(--space-4);
   width: 380px;
   max-width: calc(100vw - var(--space-6));
+  max-height: calc(100vh - var(--space-6));
+  overflow-y: auto;
   padding: var(--space-5);
   background: var(--surface-panel);
   border-radius: var(--radius-lg);

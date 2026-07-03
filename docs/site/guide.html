@@ -130,9 +130,32 @@
     <h2 id="editing">3. Creating and editing tokens</h2>
     <p>
       <strong>New token</strong> (toolbar) asks for a path like <code>colors.brand.500</code> —
-      intermediate groups are created for you. Select any token to edit it in the right-hand
-      inspector:
+      intermediate groups are created for you, and the type follows the group you're targeting. The
+      dialog helps with the value too, computed from what's already in your system:
     </p>
+    <ul>
+      <li>
+        <strong>Colors</strong> get a native picker next to the text field, plus suggestion chips: a
+        numeric path between existing scale anchors offers the interpolated step ("fits the
+        colors.gray scale at 400"), and non-scale paths offer hues from the largest gaps in your
+        palette — colors you don't have yet, derived from the ones you do. Typing a value that
+        already exists as a token offers to reference it instead of duplicating it.
+      </li>
+      <li>
+        <strong>Dimensions and durations</strong> suggest the next step in the group's progression
+        (geometric or arithmetic) and fill its largest gap.
+      </li>
+      <li>
+        <strong>Font families</strong> get a dropdown of fonts already in your tokens, system
+        stacks, and a curated Google Fonts list; <strong>font weights</strong> a named 100–900
+        dropdown. Free text always stays available.
+      </li>
+      <li>
+        <strong>⤳ Reference an existing token…</strong> creates an alias directly — pick the target
+        and the new token adopts its type. This is the fast path for semantic tokens.
+      </li>
+    </ul>
+    <p>Select any token to edit it in the right-hand inspector:</p>
     <ul>
       <li>
         <strong>Colors</strong>: click the swatch to open your OS color picker, type any CSS syntax

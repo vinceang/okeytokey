@@ -1,12 +1,25 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import type { Theme, SetStatus, TokenSet } from "@okeytokey/core";
-import { DTCG_TOKEN_TYPES, type DtcgTokenType } from "@okeytokey/schema";
-import { Button, Field, SegmentedControl, Select, TextInput } from "@okeytokey/ui";
+import {
+  formatColor,
+  isColor,
+  parseColor,
+  suggestColors,
+  suggestQuantitySteps,
+  type Resolver,
+  type SetStatus,
+  type Theme,
+  type TokenSet,
+  type ValueSuggestion,
+} from "@okeytokey/core";
+import { DTCG_TOKEN_TYPES, makeReference, type DtcgTokenType } from "@okeytokey/schema";
+import { Button, ColorSwatch, Field, SegmentedControl, Select, TextInput } from "@okeytokey/ui";
 
+import { GOOGLE_FONTS, FONT_WEIGHTS, SYSTEM_FONT_STACKS } from "../data/fonts.js";
 import { cmdCreateToken } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
+import { AliasPicker } from "./editors/AliasPicker.js";
 
 export function Dialog({
   title,
@@ -97,7 +110,45 @@ function inferTypeForPath(set: TokenSet, path: string): DtcgTokenType | undefine
   return undefined;
 }
 
-export function NewTokenDialog({ setName, onClose }: { setName: string; onClose: () => void }) {
+/** Computed value suggestions as clickable chips (swatch for colors). */
+function SuggestionChips({
+  suggestions,
+  onPick,
+}: {
+  suggestions: readonly ValueSuggestion[];
+  onPick: (value: string) => void;
+}) {
+  if (suggestions.length === 0) return null;
+  return (
+    <div className="suggestion-chips" data-testid="value-suggestions">
+      {suggestions.map((suggestion) => (
+        <button
+          key={suggestion.value}
+          type="button"
+          className="suggestion-chip"
+          title={suggestion.reason}
+          onClick={() => {
+            onPick(suggestion.value);
+          }}
+        >
+          {isColor(suggestion.value) && <ColorSwatch color={suggestion.value} />}
+          <code>{suggestion.value}</code>
+          <span className="suggestion-reason">{suggestion.reason}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function NewTokenDialog({
+  setName,
+  resolver,
+  onClose,
+}: {
+  setName: string;
+  resolver: Resolver;
+  onClose: () => void;
+}) {
   const document = useDocumentStore((state) => state.document);
   const execute = useDocumentStore((state) => state.execute);
   const select = useUiStore((state) => state.select);
@@ -106,6 +157,56 @@ export function NewTokenDialog({ setName, onClose }: { setName: string; onClose:
   const [typeTouched, setTypeTouched] = useState(false);
   const [value, setValue] = useState(DEFAULT_VALUES.color ?? "");
   const [error, setError] = useState<string>();
+  const [picking, setPicking] = useState(false);
+
+  // Deterministic suggestions from what's already in the document.
+  const suggestions = useMemo<readonly ValueSuggestion[]>(() => {
+    if (type === "color") return suggestColors(document, setName, path.trim());
+    if (type === "dimension" || type === "duration") {
+      const set = document.sets.get(setName);
+      const groupPath = path.includes(".") ? path.slice(0, path.lastIndexOf(".")) : "";
+      return set ? suggestQuantitySteps(set, groupPath) : [];
+    }
+    return [];
+  }, [document, setName, path, type]);
+
+  // Dedup nudge: the typed color already exists as a token — alias it.
+  const duplicateOf = useMemo(() => {
+    if (type !== "color" || !isColor(value)) return undefined;
+    const hex = formatColor(parseColor(value), "hex");
+    for (const candidate of resolver.visiblePaths()) {
+      const resolved = (() => {
+        try {
+          return resolver.resolve(candidate);
+        } catch {
+          return undefined;
+        }
+      })();
+      if (typeof resolved?.value !== "string" || !isColor(resolved.value)) continue;
+      if (formatColor(parseColor(resolved.value), "hex") === hex) return candidate;
+    }
+    return undefined;
+  }, [type, value, resolver]);
+
+  /** In-document font families, for the picker's first group. */
+  const documentFonts = useMemo(() => {
+    if (type !== "fontFamily") return [];
+    const fonts = new Set<string>();
+    for (const set of document.sets.values()) {
+      for (const token of set.tokens.values()) {
+        if (token.type === "fontFamily" && typeof token.value === "string") {
+          fonts.add(token.value);
+        }
+      }
+    }
+    return [...fonts];
+  }, [document, type]);
+
+  /** The native picker needs opaque #rrggbb; anything else disables it. */
+  const pickerHex = useMemo(() => {
+    if (type !== "color" || !isColor(value)) return undefined;
+    return formatColor(parseColor(value), "hex").slice(0, 7);
+  }, [type, value]);
 
   const onPathChange = (nextPath: string) => {
     setPath(nextPath);
@@ -172,23 +273,147 @@ export function NewTokenDialog({ setName, onClose }: { setName: string; onClose:
           </Select>
         )}
       </Field>
+      {type === "fontFamily" && (
+        <Field label="Pick a family (or type below)">
+          {(id) => (
+            <Select
+              id={id}
+              value=""
+              data-testid="font-family-picker"
+              onChange={(event) => {
+                if (event.target.value !== "") setValue(event.target.value);
+              }}
+            >
+              <option value="">Choose…</option>
+              {documentFonts.length > 0 && (
+                <optgroup label="In your tokens">
+                  {documentFonts.map((font) => (
+                    <option key={font} value={font}>
+                      {font}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="System stacks">
+                {SYSTEM_FONT_STACKS.map((stack) => (
+                  <option key={stack.label} value={stack.value}>
+                    {stack.label}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Google Fonts">
+                {GOOGLE_FONTS.map((font) => (
+                  <option key={font} value={font}>
+                    {font}
+                  </option>
+                ))}
+              </optgroup>
+            </Select>
+          )}
+        </Field>
+      )}
+      {type === "fontWeight" && (
+        <Field label="Pick a weight (or type below)">
+          {(id) => (
+            <Select
+              id={id}
+              value=""
+              data-testid="font-weight-picker"
+              onChange={(event) => {
+                if (event.target.value !== "") setValue(event.target.value);
+              }}
+            >
+              <option value="">Choose…</option>
+              {FONT_WEIGHTS.map((weight) => (
+                <option key={weight.value} value={String(weight.value)}>
+                  {weight.label}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      )}
       <Field label="Initial value" error={error}>
         {(id) => (
-          <TextInput
-            id={id}
-            mono
-            value={value}
-            data-testid="new-token-value"
-            placeholder='#3b82f6, 16px, or {"fontSize": "16px"}'
-            onChange={(event) => {
-              setValue(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && path.trim() !== "") create();
-            }}
-          />
+          <div className="value-with-picker">
+            <TextInput
+              id={id}
+              mono
+              value={value}
+              data-testid="new-token-value"
+              placeholder='#3b82f6, 16px, or {"fontSize": "16px"}'
+              onChange={(event) => {
+                setValue(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && path.trim() !== "") create();
+              }}
+            />
+            {type === "color" && (
+              <input
+                type="color"
+                className="new-token-color-picker"
+                aria-label="Pick a color"
+                data-testid="new-token-color-picker"
+                value={pickerHex ?? "#808080"}
+                onChange={(event) => {
+                  setValue(event.target.value);
+                }}
+              />
+            )}
+          </div>
         )}
       </Field>
+
+      <SuggestionChips suggestions={suggestions} onPick={setValue} />
+
+      {duplicateOf !== undefined && value !== makeReference(duplicateOf) && (
+        <button
+          type="button"
+          className="suggestion-chip"
+          data-testid="duplicate-alias-nudge"
+          onClick={() => {
+            setValue(makeReference(duplicateOf));
+          }}
+        >
+          <code>{value}</code>
+          <span className="suggestion-reason">
+            already exists as {duplicateOf} — reference it instead
+          </span>
+        </button>
+      )}
+
+      <div className="editor-row">
+        <Button
+          variant="ghost"
+          data-testid="new-token-reference"
+          onClick={() => {
+            setPicking(true);
+          }}
+        >
+          ⤳ Reference an existing token…
+        </Button>
+      </div>
+      {picking && (
+        <div className="alias-picker alias-picker--inline">
+          <AliasPicker
+            resolver={resolver}
+            excludePath={path.trim()}
+            onPick={(target) => {
+              setValue(makeReference(target));
+              if (!typeTouched) {
+                const targetType = resolver.lookup(target)?.type;
+                if (targetType !== undefined) setType(targetType);
+              }
+              setPicking(false);
+            }}
+            onClose={() => {
+              setPicking(false);
+            }}
+          />
+        </div>
+      )}
+
       <footer>
         <Button variant="ghost" onClick={onClose}>
           Cancel

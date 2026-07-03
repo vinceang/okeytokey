@@ -127,6 +127,8 @@ export {
   type ScalePlan,
 } from "./generate/scale.js";
 
+export { suggestColors, suggestQuantitySteps, type ValueSuggestion } from "./generate/suggest.js";
+
 export {
   deprecate,
   planMoveToSet,
