@@ -20,12 +20,14 @@
     "@okeytokey/transforms": "workspace:*",
     "@okeytokey/ui": "workspace:*",
     "@tanstack/react-virtual": "^3.14.5",
+    "cmdk": "^1.1.1",
     "dexie": "^4.4.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@okeytokey/eslint-config": "workspace:*",
     "@okeytokey/tsconfig": "workspace:*",
     "@okeytokey/vitest-config": "workspace:*",

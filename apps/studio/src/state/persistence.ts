@@ -108,7 +108,13 @@ export async function initPersistence(
   } catch {
     persisted = { document: createTokenDocument([]), themes: [] };
   }
-  if (persisted.document.sets.size === 0) {
+  if (
+    persisted.document.sets.size === 0 &&
+    typeof localStorage !== "undefined" &&
+    localStorage.getItem("okeytokey.onboarded") !== null
+  ) {
+    // Returning user with an empty database (cleared, or finished onboarding
+    // without content) — seed the starter so the app is never a dead end.
     persisted = starterDocument();
   }
   store.getState().hydrate(persisted.document, persisted.themes);

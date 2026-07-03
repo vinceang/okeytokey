@@ -54,6 +54,8 @@
   --danger-500: hsl(0 72% 51%);
   --danger-600: hsl(0 70% 42%);
   --warning-500: hsl(38 92% 45%);
+  /* Amber legible as TEXT on white (>= 4.5:1); warning-500 is for glyphs/dots. */
+  --warning-text: hsl(30 95% 32%);
   --warning-bg: hsl(45 95% 94%);
   --success-500: hsl(152 60% 36%);
 
@@ -64,10 +66,10 @@
   --surface-hover: var(--gray-100);
   --surface-selected: var(--accent-50);
 
-  /* Text */
+  /* Text — tertiary must still clear WCAG AA (4.5:1) on white panels. */
   --text-primary: var(--gray-900);
   --text-secondary: var(--gray-600);
-  --text-tertiary: var(--gray-400);
+  --text-tertiary: hsl(210 10% 42%);
   --text-on-accent: #ffffff;
 
   /* Lines — used sparingly; prefer surface shifts */

@@ -110,7 +110,7 @@ export function TokenRow({
     <button
       type="button"
       className="okey-token-row"
-      aria-selected={selected}
+      aria-pressed={selected}
       style={
         indent > 0
           ? { paddingLeft: `calc(var(--space-3) + ${String(indent)} * var(--space-4))` }

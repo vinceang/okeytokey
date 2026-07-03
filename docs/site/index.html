@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>okeytokey — design tokens, decided</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 42rem;
+        padding: 4rem 1.5rem;
+      }
+      h1 {
+        font-size: 2.25rem;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.25rem;
+      }
+      .tagline {
+        opacity: 0.65;
+        margin-top: 0;
+      }
+      h2 {
+        margin-top: 2.5rem;
+        font-size: 1.15rem;
+      }
+      code {
+        font-family: ui-monospace, monospace;
+        font-size: 0.9em;
+      }
+      ul {
+        padding-left: 1.2rem;
+      }
+      a {
+        color: hsl(220 80% 48%);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>okeytokey</h1>
+    <p class="tagline">Design tokens, decided. W3C DTCG-native, local-first.</p>
+
+    <p>
+      An enterprise-grade design token platform: a headless core engine, a web studio, Git sync with
+      a connection doctor, an export pipeline, and a Figma plugin. Every token can carry the
+      <em>decision</em> behind it — guidelines, lifecycle, rationale — under the
+      <code>com.okeytokey</code> extension namespace, and every file remains a valid DTCG document.
+    </p>
+
+    <h2>Why okeytokey</h2>
+    <ul>
+      <li>Lossless round-trips — key order and unknown fields survive, always.</li>
+      <li>Rename-with-refactor across every set, alias, math expression, and composite. Free.</li>
+      <li>
+        A lint engine: broken references, cycles, WCAG + APCA contrast, orphans, deprecated usage.
+      </li>
+      <li>Semantic diffs with transitive impact analysis — “this change affects 47 tokens”.</li>
+      <li>
+        Sync that explains itself: structured traces, a connection doctor, dry-run pushes,
+        token-level merges.
+      </li>
+      <li>OKLCH-native color with sRGB gamut warnings.</li>
+    </ul>
+
+    <h2>Documentation</h2>
+    <p>
+      This site is a stub. For now, the source of truth is the repository: per-package READMEs
+      document every public API, and
+      <code>docs/adr/</code> records the architecture decisions (resolution semantics, extension
+      namespace, undo model, sync/merge strategy).
+    </p>
+
+    <h2>Getting started</h2>
+    <p>
+      <code>pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm --filter @okeytokey/studio dev</code>
+      — then open <code>http://localhost:5173</code> and pick a starting point in the onboarding
+      wizard. Build artifacts in CI with <code>pnpm okeytokey build okeytokey.config.json</code>.
+    </p>
+  </body>
+</html>

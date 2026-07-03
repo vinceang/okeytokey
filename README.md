@@ -31,7 +31,12 @@ violations and circular dependencies fail CI.
 | 3 — Validation, diff, refactor               | ✅ Done                   |
 | 4 — Sync + transforms                        | ✅ Done (ADR 0004)        |
 | 5 — Figma plugin                             | ✅ Done                   |
-| 6 — Polish (onboarding, palette, a11y, perf) | Next                      |
+| 6 — Polish (onboarding, palette, a11y, perf) | ✅ Done                   |
+
+All six phases of v1 are complete. CI runs the full gauntlet on every push: build,
+typecheck, lint, format, boundary rules, unit tests (core coverage gate ≥90%),
+and the Playwright suite — including axe WCAG 2.1 AA checks on key screens and the
+10,000-token virtualization benchmark.
 
 Run the editor: `pnpm install && pnpm build && pnpm --filter @okeytokey/studio dev`,
 then open http://localhost:5173. First run seeds a small primitive → semantic starter

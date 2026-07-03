@@ -110,6 +110,32 @@ export function TokenList({ set, resolver }: TokenListProps) {
     overscan: 12,
   });
 
+  // Keyboard-first: arrows move the selection across token rows (groups are
+  // skipped); Home/End jump. Rows are buttons, so Enter/Space work natively.
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const tokenRows = rows.filter(
+      (row): row is Extract<Row, { kind: "token" }> => row.kind === "token",
+    );
+    if (tokenRows.length === 0) return;
+    event.preventDefault();
+    const currentIndex = tokenRows.findIndex(
+      (row) => selection?.set === set.name && selection.path === row.token.pathString,
+    );
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? tokenRows.length - 1
+          : event.key === "ArrowDown"
+            ? Math.min(tokenRows.length - 1, currentIndex + 1)
+            : Math.max(0, currentIndex === -1 ? 0 : currentIndex - 1);
+    const next = tokenRows[nextIndex];
+    if (!next) return;
+    select({ set: set.name, path: next.token.pathString });
+    virtualizer.scrollToIndex(rows.indexOf(next), { align: "auto" });
+  };
+
   if (rows.length === 0) {
     return (
       <div className="token-scroll" data-testid="token-list">
@@ -126,7 +152,15 @@ export function TokenList({ set, resolver }: TokenListProps) {
   }
 
   return (
-    <div className="token-scroll" ref={scrollRef} data-testid="token-list">
+    <div
+      className="token-scroll"
+      ref={scrollRef}
+      data-testid="token-list"
+      role="region"
+      aria-label="Tokens"
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+    >
       <div className="token-list-inner" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const row = rows[virtualRow.index];

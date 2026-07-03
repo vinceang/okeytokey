@@ -174,7 +174,7 @@ function App() {
               key={path}
               type="button"
               className="okey-token-row"
-              aria-selected={selectedPath === path}
+              aria-pressed={selectedPath === path}
               style={{ height: 28 }}
               onClick={() => {
                 setSelectedPath(path);

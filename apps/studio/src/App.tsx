@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Button, TextInput } from "@okeytokey/ui";
 
+import { CommandPalette } from "./components/CommandPalette.js";
 import { DiagnosticsPanel } from "./components/DiagnosticsPanel.js";
+import { ExportDialog } from "./components/ExportDialog.js";
 import { Inspector } from "./components/Inspector.js";
+import { Onboarding, ONBOARDED_KEY } from "./components/Onboarding.js";
 import { Sidebar } from "./components/Sidebar.js";
+import { SyncDialog } from "./components/SyncDialog.js";
 import { TokenList } from "./components/TokenList.js";
 import { NewTokenDialog } from "./components/dialogs.js";
 import { useResolver } from "./hooks/use-resolver.js";
@@ -25,8 +29,9 @@ export function App() {
   const selection = useUiStore((state) => state.selection);
   const filter = useUiStore((state) => state.filter);
   const setFilter = useUiStore((state) => state.setFilter);
+  const dialog = useUiStore((state) => state.dialog);
+  const openDialog = useUiStore((state) => state.openDialog);
 
-  const [creating, setCreating] = useState(false);
   const resolver = useResolver();
 
   useEffect(() => {
@@ -64,6 +69,19 @@ export function App() {
     return (
       <div className="okey-app studio">
         <p className="empty-state">Loading…</p>
+      </div>
+    );
+  }
+
+  const needsOnboarding = document.sets.size === 0 && localStorage.getItem(ONBOARDED_KEY) === null;
+  if (needsOnboarding) {
+    return (
+      <div className="okey-app">
+        <Onboarding
+          onConnectGitHub={() => {
+            openDialog("sync");
+          }}
+        />
       </div>
     );
   }
@@ -108,7 +126,7 @@ export function App() {
             variant="primary"
             disabled={currentSet === undefined}
             onClick={() => {
-              setCreating(true);
+              openDialog("new-token");
             }}
             data-testid="new-token"
           >
@@ -129,17 +147,47 @@ export function App() {
         <Inspector selection={selection} resolver={resolver} />
       ) : (
         <aside className="studio-inspector">
-          <p className="empty-state">Select a token to inspect and edit it.</p>
+          <p className="empty-state">
+            Select a token to inspect and edit it. Press ⌘K for the command palette.
+          </p>
         </aside>
       )}
-      {creating && currentSet && (
+      {dialog === "new-token" && currentSet && (
         <NewTokenDialog
           setName={currentSet.name}
           onClose={() => {
-            setCreating(false);
+            openDialog(undefined);
           }}
         />
       )}
+      {dialog === "export" && (
+        <ExportDialog
+          onClose={() => {
+            openDialog(undefined);
+          }}
+        />
+      )}
+      {dialog === "sync" && (
+        <SyncDialog
+          onClose={() => {
+            openDialog(undefined);
+          }}
+        />
+      )}
+      <CommandPalette
+        resolver={resolver}
+        actions={{
+          newToken: () => {
+            openDialog("new-token");
+          },
+          openExport: () => {
+            openDialog("export");
+          },
+          openSync: () => {
+            openDialog("sync");
+          },
+        }}
+      />
     </div>
   );
 }

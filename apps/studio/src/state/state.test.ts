@@ -132,6 +132,14 @@ describe("persistence", () => {
     const dbName = `test-init-${String(Date.now())}`;
     const storage = createStorage(dbName);
     useDocumentStore.setState({ hydrated: false });
+    // Starter seeding only happens for onboarded users (first run shows the
+    // wizard instead); simulate a returning user.
+    const store = new Map<string, string>([["okeytokey.onboarded", "1"]]);
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    };
 
     // Real timers: fake timers stall IndexedDB's internal promises.
     const stop = await initPersistence(storage, 10);

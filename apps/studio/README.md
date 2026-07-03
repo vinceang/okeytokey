@@ -18,6 +18,20 @@ The okeytokey web token editor (Vite + React 19 + Zustand).
 - Filter matches token names and values; decision-context metadata
   (guidelines, lifecycle, decisions) surfaces in the inspector
 
+## Phase 6 additions
+
+- **Onboarding wizard** on first run: starter architecture (primitive → semantic with
+  light/dark themes), import existing DTCG/Tokens Studio JSON, or connect GitHub
+  (opens the sync dialog with the connection doctor).
+- **Command palette** (⌘K, cmdk): actions, theme switching, and fuzzy token
+  navigation across all sets.
+- **Keyboard-first list**: arrow keys move the token selection (Home/End jump);
+  every control is reachable without a mouse.
+- **Accessibility**: WCAG 2.1 AA — axe checks run in CI on the editor, dialogs, and
+  onboarding; serious/critical violations fail the build. Dialogs follow the ARIA
+  pattern (aria-modal, Escape closes).
+- The 10k-token virtualization benchmark (`e2e/perf.spec.ts`) runs in CI.
+
 ## Phase 3 additions
 
 - **Diagnostics panel** (bottom drawer): live lint over the whole document —

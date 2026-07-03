@@ -238,7 +238,7 @@
   background: var(--surface-hover);
 }
 
-.okey-token-row[aria-selected="true"] {
+.okey-token-row[aria-pressed="true"] {
   background: var(--surface-selected);
   box-shadow: inset 2px 0 0 var(--accent-500);
 }

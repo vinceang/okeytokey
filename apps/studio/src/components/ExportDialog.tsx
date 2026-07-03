@@ -102,6 +102,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
         rows={12}
         readOnly
         value={output}
+        aria-label="Export preview"
         data-testid="export-preview"
       />
       <footer>
