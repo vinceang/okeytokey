@@ -29,11 +29,22 @@ test("main editor screen has no serious a11y violations", async ({ page }) => {
 test("dialogs have no serious a11y violations", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("new-token").click();
+  // With suggestions and the native picker showing, not just the empty form.
+  await page.getByTestId("new-token-path").fill("colors.gray.400");
+  await page.getByTestId("value-suggestions").waitFor();
   await expectNoSeriousViolations(page, "new-token dialog");
   await page.keyboard.press("Escape");
 
   await page.getByTestId("open-export").click();
   await expectNoSeriousViolations(page, "export dialog");
+  await page.keyboard.press("Escape");
+
+  await page.getByTestId("open-ai-settings").click();
+  await page
+    .getByRole("group", { name: "AI provider" })
+    .getByRole("button", { name: "Local / OpenAI-compatible" })
+    .click();
+  await expectNoSeriousViolations(page, "AI provider dialog");
 });
 
 test("onboarding has no serious a11y violations", async ({ page, context }) => {
