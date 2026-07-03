@@ -40,8 +40,16 @@ function buildRows(set: TokenSet, collapsed: ReadonlySet<string>, filter: string
 
   const rows: Row[] = [];
   const walk = (node: JsonMap, prefix: string, depth: number): void => {
-    for (const [key, child] of node) {
-      if (key.startsWith("$") || !(child instanceof Map)) continue;
+    // A scale's steps are numeric siblings (50, 100, … 950). Present them in
+    // numeric order even when one was generated or edited out of sequence.
+    // Only pure numeric-sibling groups sort; every other group keeps its
+    // document order, which is meaningful and preserved on serialization.
+    const children = [...node].filter(
+      (entry): entry is [string, JsonMap] => !entry[0].startsWith("$") && entry[1] instanceof Map,
+    );
+    const allNumeric = children.length > 0 && children.every(([key]) => /^\d+$/.test(key));
+    const ordered = allNumeric ? [...children].sort(([a], [b]) => Number(a) - Number(b)) : children;
+    for (const [key, child] of ordered) {
       const path = prefix === "" ? key : `${prefix}.${key}`;
       if (child.has("$value")) {
         const token = set.tokens.get(path);

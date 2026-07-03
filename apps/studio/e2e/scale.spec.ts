@@ -91,6 +91,35 @@ test("a flat color token becomes a scale seed: rename + ramp, references follow,
   await expect(page.getByTestId("token-colors.red.500")).toHaveCount(0);
 });
 
+test("numeric scale steps render in ascending order even when added out of sequence", async ({
+  page,
+}) => {
+  await page.goto("/");
+  // Starter blue has 500, 600. Add 900 then 100 — appended out of numeric
+  // sequence, exactly like a scale step generated after the fact.
+  const additions: [string, string][] = [
+    ["colors.blue.900", "#1e3a8a"],
+    ["colors.blue.100", "#dbeafe"],
+  ];
+  for (const [path, value] of additions) {
+    await page.getByTestId("new-token").click();
+    await page.getByTestId("new-token-path").fill(path);
+    await page.getByTestId("new-token-value").fill(value);
+    await page.getByTestId("create-token").click();
+  }
+
+  // The tree lists them 100, 500, 600, 900 — numeric order, not insertion order.
+  const ids = await page
+    .locator('[data-testid^="token-colors.blue."]')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid")));
+  expect(ids).toEqual([
+    "token-colors.blue.100",
+    "token-colors.blue.500",
+    "token-colors.blue.600",
+    "token-colors.blue.900",
+  ]);
+});
+
 test("pointing at a group without numeric anchors explains the two valid shapes", async ({
   page,
 }) => {
