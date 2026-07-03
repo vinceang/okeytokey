@@ -23,12 +23,16 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
 - ~~7.0 Deterministic Scale Generator~~ — shipped (core `generate/` + studio dialog)
 - ~~7.1 `@okeytokey/ai` foundation~~ — shipped (provider interface, proposal
   contract, context assembly, mock provider, contract tests)
-- **7.2 Local provider** — OpenAI-compatible endpoint adapter + connection UI
-  (note: browser CORS — Ollama needs `OLLAMA_ORIGINS`)
+- ~~7.2 Local provider~~ + ~~7.5 BYOK cloud providers~~ — shipped as one round:
+  `OpenAiCompatibleProvider` (Ollama/LM Studio/OpenRouter presets, key optional)
+  and `AnthropicProvider` (browser-CORS via the official SDK), both passing the
+  provider contract with scripted fetch; AI Provider settings dialog with
+  connection doctor and explicit local-vs-cloud privacy copy. OpenAI-direct
+  stays deferred — its API serves no CORS headers, so a browser app can't call
+  it without a proxy.
 - **7.3 First vertical slice** — Generate Semantic Tokens from Primitives, with the
   proposal review UI (diff, per-op acceptance, undo)
 - **7.4 Additional workflows** — dark theme, accessibility, renames, aliases, explain
-- **7.5 BYOK cloud providers** — Anthropic/OpenRouter first (browser-CORS friendly)
 - **7.6 Evaluation + polish**
 
 ## Later

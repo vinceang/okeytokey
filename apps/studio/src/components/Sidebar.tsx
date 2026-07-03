@@ -236,6 +236,15 @@ export function Sidebar() {
         >
           Sync with GitHub…
         </Button>
+        <Button
+          variant="secondary"
+          data-testid="open-ai-settings"
+          onClick={() => {
+            openDialog("ai");
+          }}
+        >
+          AI provider…
+        </Button>
         <input
           ref={fileInput}
           type="file"

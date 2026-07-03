@@ -58,6 +58,12 @@ Known constraint for 7.2/7.5: browser CORS dictates provider order (Anthropic an
 OpenRouter allow browser calls; Ollama needs `OLLAMA_ORIGINS`; OpenAI requires a
 proxy). No silent fallback from a local provider to a cloud one, ever.
 
+Status update (2026-07): 7.2 and 7.5 shipped together as `OpenAiCompatibleProvider`
+(one adapter for Ollama/LM Studio locally and OpenRouter-style BYOK clouds) and
+`AnthropicProvider` (official SDK, browser-CORS supported). Both pass
+`runProviderContract` against scripted fetch in CI. The studio's AI Provider
+dialog defaults to "None" and states per choice where data goes and who pays.
+
 ## Consequences
 
 - A malformed model response is a typed parse failure with a reason, never a

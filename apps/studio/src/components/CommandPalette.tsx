@@ -11,6 +11,7 @@ export interface PaletteActions {
   openExport: () => void;
   openSync: () => void;
   openScale: () => void;
+  openAiSettings: () => void;
 }
 
 /**
@@ -122,6 +123,14 @@ export function CommandPalette({
               }}
             >
               Generate scale steps…
+            </Command.Item>
+            <Command.Item
+              data-testid="palette-ai"
+              onSelect={() => {
+                run(actions.openAiSettings);
+              }}
+            >
+              AI provider settings…
             </Command.Item>
           </Command.Group>
           <Command.Group heading="Themes">

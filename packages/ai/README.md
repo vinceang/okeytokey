@@ -17,8 +17,19 @@ ADR 0006). The invariant: **AI proposes, okeytokey proves.**
 - `assembleContext(document, pathPrefixes)` — minimal context: the selected
   subtree + one level of referenced tokens, never the whole document by default.
 - `MockProvider` — deterministic, offline; powers development and CI.
+- `OpenAiCompatibleProvider` — one adapter for everything speaking
+  `/v1/chat/completions`: Ollama and LM Studio locally, OpenRouter (and most
+  BYOK clouds) with the user's own key. `OPENAI_COMPATIBLE_PRESETS` prefill the
+  settings UI; browser CORS notes ride along (Ollama needs `OLLAMA_ORIGINS`).
+  OpenAI's own API serves no CORS headers, so it is deliberately not a preset.
+- `AnthropicProvider` — BYOK adapter on the official `@anthropic-ai/sdk`, which
+  supports direct browser calls. `testConnection()` verifies the key and model
+  in one `models.retrieve` call.
 - `runProviderContract(provider, document)` — the conformance checks every
-  adapter must pass.
+  adapter must pass. Both adapters pass it in CI against scripted `fetch`
+  implementations: zero live inference in tests.
 
-Depends only on `@okeytokey/core` + `@okeytokey/schema`. No credentials are ever
-stored here, in token documents, or in Git sync.
+Depends only on `@okeytokey/core` + `@okeytokey/schema` (plus the Anthropic
+SDK). No credentials are ever stored here, in token documents, or in Git sync;
+inference is always local or billed to the user's own key — okeytokey never
+funds it, and never falls back from one provider to another silently.

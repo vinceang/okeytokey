@@ -7,7 +7,7 @@ export interface TokenSelection {
   readonly path: string;
 }
 
-export type StudioDialog = "export" | "sync" | "new-token" | "scale";
+export type StudioDialog = "export" | "sync" | "new-token" | "scale" | "ai";
 
 export interface UiState {
   activeSet: string | undefined;

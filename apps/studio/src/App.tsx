@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 import { Button, TextInput } from "@okeytokey/ui";
 
+import { AiProviderDialog } from "./components/AiProviderDialog.js";
 import { CommandPalette } from "./components/CommandPalette.js";
 import { DiagnosticsPanel } from "./components/DiagnosticsPanel.js";
 import { ExportDialog } from "./components/ExportDialog.js";
@@ -182,6 +183,13 @@ export function App() {
           }}
         />
       )}
+      {dialog === "ai" && (
+        <AiProviderDialog
+          onClose={() => {
+            openDialog(undefined);
+          }}
+        />
+      )}
       <CommandPalette
         resolver={resolver}
         actions={{
@@ -196,6 +204,9 @@ export function App() {
           },
           openScale: () => {
             openDialog("scale");
+          },
+          openAiSettings: () => {
+            openDialog("ai");
           },
         }}
       />

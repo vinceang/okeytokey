@@ -302,6 +302,35 @@
       </li>
     </ul>
 
+    <h2 id="ai">9b. AI provider (optional, off by default)</h2>
+    <p>
+      <strong>AI provider…</strong> (sidebar or ⌘K) configures where future AI-assisted workflows
+      run. The default is <strong>None</strong>: nothing is ever sent anywhere. okeytokey never
+      provides or pays for inference — it is either local, or billed to your own key.
+    </p>
+    <ul>
+      <li>
+        <strong>Local / OpenAI-compatible</strong> talks to any
+        <code>/v1/chat/completions</code> server. Presets: <em>Ollama</em> (start it with
+        <code>OLLAMA_ORIGINS</code> set to this app's origin so the browser may call it),
+        <em>LM Studio</em> (enable CORS in its server settings), and <em>OpenRouter</em> with your
+        own key. With a local endpoint, token data never leaves your machine.
+      </li>
+      <li>
+        <strong>Anthropic</strong> uses your own <code>sk-ant-…</code> API key directly from the
+        browser (Anthropic supports this; most other clouds don't, which is why OpenAI-direct isn't
+        offered).
+      </li>
+      <li>
+        <strong>Test connection</strong> tells you exactly what was checked and what came back —
+        wrong key, unreachable server, or missing model, with the fix.
+      </li>
+      <li>
+        Settings and keys live in this browser's localStorage (the same tradeoff as the GitHub
+        token) and are never written into token files or Git sync.
+      </li>
+    </ul>
+
     <h2 id="figma">10. Figma plugin</h2>
     <p>
       Build with <code>pnpm --filter @okeytokey/figma-plugin build</code>, then in Figma desktop:

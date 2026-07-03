@@ -77,6 +77,9 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: "node_modules" },
+    // Boundaries are a source-level concern; bundler output (code-split
+    // chunks import each other circularly by design) is not cruised.
+    exclude: { path: "(^|/)dist/" },
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {
       exportsFields: ["exports"],

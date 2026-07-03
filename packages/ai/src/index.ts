@@ -39,4 +39,16 @@ export { assembleContext, type TaskContext } from "./context.js";
 
 export { MockProvider, type MockProviderOptions } from "./mock.js";
 
+export { OpenAiCompatibleProvider, type OpenAiCompatibleOptions } from "./openai-compatible.js";
+
+export {
+  ANTHROPIC_DEFAULT_MODEL,
+  AnthropicProvider,
+  type AnthropicProviderOptions,
+} from "./anthropic.js";
+
+export { OPENAI_COMPATIBLE_PRESETS, type ProviderPreset } from "./presets.js";
+
+export { buildSystemPrompt, buildUserPrompt } from "./prompt.js";
+
 export { runProviderContract, type ContractCheck } from "./contract.js";

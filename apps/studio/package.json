@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@okeytokey/ai": "workspace:*",
     "@okeytokey/core": "workspace:*",
     "@okeytokey/schema": "workspace:*",
     "@okeytokey/sync": "workspace:*",

@@ -733,6 +733,22 @@ a.sidebar-item {
   color: var(--text-secondary);
 }
 
+.ai-privacy {
+  margin: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.ai-preset-note,
+.ai-key-note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
 /* --- Dialogs ------------------------------------------------------------------------ */
 .dialog-backdrop {
   position: fixed;

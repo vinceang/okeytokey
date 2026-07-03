@@ -21,6 +21,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.109.1",
     "@okeytokey/core": "workspace:*",
     "@okeytokey/schema": "workspace:*",
     "zod": "^4.0.0"
