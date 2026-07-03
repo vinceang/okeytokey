@@ -57,4 +57,3 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
 - **PR-based sync flow** — `createBranch` + `openPullRequest` exist on the provider;
   the studio always pushes to the configured branch. A "propose changes as PR"
   toggle would suit protected branches.
-- **ReferencePill truncation** — long paths truncate without a visible ellipsis.

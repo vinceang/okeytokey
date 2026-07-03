@@ -80,7 +80,8 @@ export function ReferencePill({ path, broken = false, onClick }: ReferencePillPr
       title={broken ? `{${path}} — broken reference` : `Go to ${path}`}
       onClick={() => onClick?.(path)}
     >
-      {`{${path}}`}
+      {/* text-overflow needs a block-ish child — it's inert on the flex button itself */}
+      <span className="okey-ref-pill-label">{`{${path}}`}</span>
     </button>
   );
 }

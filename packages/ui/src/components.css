@@ -212,6 +212,12 @@
   font: 500 var(--text-sm) var(--font-mono);
   cursor: pointer;
   overflow: hidden;
+}
+
+.okey-ref-pill-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
