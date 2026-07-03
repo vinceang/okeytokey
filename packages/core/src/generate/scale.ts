@@ -1,11 +1,17 @@
-import { converter, interpolate, type Color as CuloriColor } from "culori";
+import { clampChroma, converter, interpolate, type Color as CuloriColor } from "culori";
 
 const toOklch = converter("oklch");
 
 import { formatColor, isColor, isInSrgbGamut, parseColor } from "../color/color.js";
 import { TokenParseError } from "../errors.js";
 import { createToken, setTokenMeta, withSet } from "../mutate/mutate.js";
-import type { TokenDocument, TokenNode } from "../parser/document.js";
+import {
+  parseTokenSet,
+  type TokenDocument,
+  type TokenNode,
+  type TokenSet,
+} from "../parser/document.js";
+import type { JsonMap, JsonValue } from "../ordered-json/ordered-json.js";
 import { createResolver } from "../resolver/resolver.js";
 
 /**
@@ -63,6 +69,38 @@ export interface ScaleOptions {
 
 class ScaleError extends TokenParseError {
   override readonly name = "ScaleError";
+}
+
+/**
+ * Reorder a group's children so numeric names sort ascending (generation
+ * appends, which would leave 600, 50, 100…). `$` keys keep their position at
+ * the front; non-numeric children keep their relative order after the steps.
+ */
+function sortGroupNumerically(set: TokenSet, groupPath: string): TokenSet {
+  const segments = groupPath.split(".");
+
+  const rebuild = (node: JsonMap, depth: number): JsonMap => {
+    if (depth < segments.length) {
+      const key = segments[depth];
+      const child = key === undefined ? undefined : node.get(key);
+      if (key === undefined || !(child instanceof Map)) return node;
+      const next = new Map(node);
+      next.set(key, rebuild(child, depth + 1));
+      return next;
+    }
+    const dollar: [string, JsonValue][] = [];
+    const numeric: [string, JsonValue][] = [];
+    const rest: [string, JsonValue][] = [];
+    for (const entry of node) {
+      if (entry[0].startsWith("$")) dollar.push(entry);
+      else if (/^\d+$/.test(entry[0])) numeric.push(entry);
+      else rest.push(entry);
+    }
+    numeric.sort((a, b) => Number(a[0]) - Number(b[0]));
+    return new Map([...dollar, ...numeric, ...rest]);
+  };
+
+  return parseTokenSet(set.name, rebuild(set.root, 0));
 }
 
 function fail(setName: string, path: string, message: string): never {
@@ -157,10 +195,12 @@ export function planColorScale(
     }
     return parseColor(input).color;
   };
-  const cssOf = (color: CuloriColor): string =>
-    isInSrgbGamut({ color, input: "" })
-      ? formatColor({ color, input: "" }, "hex")
-      : formatColor({ color, input: "" }, "oklch");
+  // Generated ramp values are for direct use: gamut-map into sRGB
+  // (chroma-clamped in OKLCH — deterministic) and emit hex.
+  const cssOf = (color: CuloriColor): string => {
+    const fitted = isInSrgbGamut({ color, input: "" }) ? color : clampChroma(color, "oklch");
+    return formatColor({ color: fitted, input: "" }, "hex");
+  };
 
   if (options.lightEnd !== undefined || singleAnchor) {
     const color =
@@ -211,9 +251,12 @@ export function planColorScale(
     const above = anchorNodes.find((anchor) => anchor.step > step) ?? last;
     const t = (step - below.step) / (above.step - below.step);
     const mixed = interpolate([below.color, above.color], "oklch")(t);
-    const parsed = { color: mixed, input: "" };
-    const value = isInSrgbGamut(parsed) ? formatColor(parsed, "hex") : formatColor(parsed, "oklch");
-    generated.push({ path: `${groupPath}.${String(step)}`, step, value, anchor: false });
+    generated.push({
+      path: `${groupPath}.${String(step)}`,
+      step,
+      value: cssOf(mixed),
+      anchor: false,
+    });
   }
 
   const apply = (): TokenDocument => {
@@ -230,7 +273,7 @@ export function planColorScale(
         },
       });
     }
-    return withSet(document, nextSet);
+    return withSet(document, sortGroupNumerically(nextSet, groupPath));
   };
 
   return {

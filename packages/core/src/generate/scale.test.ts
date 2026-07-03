@@ -61,6 +61,44 @@ describe("planColorScale", () => {
     expect(viaAlias.generated).toEqual(direct.generated);
   });
 
+  it("every generated value is sRGB hex (out-of-gamut colors are chroma-clamped)", () => {
+    // A saturated blue seed pushes light/dark interpolants out of sRGB;
+    // they must come back gamut-mapped as hex, not as raw oklch() strings.
+    const single = doc(
+      '{ "colors": { "$type": "color", "blue": { "600": { "$value": "#2563eb" } } } }',
+    );
+    const plan = planColorScale(single, "global", "colors.blue");
+    for (const entry of plan.generated) {
+      expect(entry.value, `${entry.path} should be hex`).toMatch(/^#[0-9a-f]{6}$/);
+    }
+    expect(plan.synthesized?.lightEnd).toMatch(/^#[0-9a-f]{6}$/);
+    expect(plan.synthesized?.darkEnd).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("apply() sorts the group's numeric children ascending", () => {
+    // Seed written as 600 only; generated steps must not trail after it.
+    const single = doc(
+      '{ "colors": { "$type": "color", "blue": { "600": { "$value": "#2563eb" } } } }',
+    );
+    const next = planColorScale(single, "global", "colors.blue").apply();
+    const paths = [...(next.sets.get("global")?.tokens.keys() ?? [])].filter((path) =>
+      path.startsWith("colors.blue."),
+    );
+    expect(paths).toEqual([
+      "colors.blue.50",
+      "colors.blue.100",
+      "colors.blue.200",
+      "colors.blue.300",
+      "colors.blue.400",
+      "colors.blue.500",
+      "colors.blue.600",
+      "colors.blue.700",
+      "colors.blue.800",
+      "colors.blue.900",
+      "colors.blue.950",
+    ]);
+  });
+
   it("apply() creates tokens with lineage metadata, anchors untouched", () => {
     const plan = planColorScale(doc(ANCHORS), "global", "colors.blue");
     const next = plan.apply();
