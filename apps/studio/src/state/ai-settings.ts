@@ -54,21 +54,29 @@ export function saveAiSettings(settings: AiSettings): void {
   localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
 }
 
-/** The single place a provider instance is built from settings. */
+/**
+ * The single place a provider instance is built from settings. A constructor
+ * rejecting its config (e.g. a hand-edited localStorage entry) means "not
+ * configured", never a crashed dialog.
+ */
 export function createConfiguredProvider(settings: AiSettings): AiProvider | undefined {
-  switch (settings.provider) {
-    case "none":
-      return undefined;
-    case "openai-compatible":
-      return new OpenAiCompatibleProvider({
-        baseUrl: settings.baseUrl,
-        model: settings.model,
-        apiKey: settings.apiKey === "" ? undefined : settings.apiKey,
-      });
-    case "anthropic":
-      return new AnthropicProvider({
-        apiKey: settings.anthropicApiKey,
-        model: settings.anthropicModel,
-      });
+  try {
+    switch (settings.provider) {
+      case "none":
+        return undefined;
+      case "openai-compatible":
+        return new OpenAiCompatibleProvider({
+          baseUrl: settings.baseUrl,
+          model: settings.model,
+          apiKey: settings.apiKey === "" ? undefined : settings.apiKey,
+        });
+      case "anthropic":
+        return new AnthropicProvider({
+          apiKey: settings.anthropicApiKey,
+          model: settings.anthropicModel,
+        });
+    }
+  } catch {
+    return undefined;
   }
 }

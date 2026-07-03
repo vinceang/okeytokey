@@ -9,7 +9,8 @@ test("dimension unit switching converts at 16px/rem, offers group apply, keeps m
   // literal so the group offer has something to convert.
   await page.getByTestId("new-token").click();
   await page.getByTestId("new-token-path").fill("spacing.xl");
-  await page.getByTestId("new-token-type").selectOption("dimension");
+  // The type is inferred from the target group's existing tokens.
+  await expect(page.getByTestId("new-token-type")).toHaveValue("dimension");
   await page.getByTestId("new-token-value").fill("40px");
   await page.getByTestId("create-token").click();
 

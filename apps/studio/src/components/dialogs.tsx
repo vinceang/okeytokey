@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-import type { Theme, SetStatus } from "@okeytokey/core";
+import type { Theme, SetStatus, TokenSet } from "@okeytokey/core";
 import { DTCG_TOKEN_TYPES, type DtcgTokenType } from "@okeytokey/schema";
 import { Button, Field, SegmentedControl, Select, TextInput } from "@okeytokey/ui";
 
@@ -76,13 +76,48 @@ function parseInitialValue(type: DtcgTokenType, text: string): unknown {
   return trimmed;
 }
 
+/**
+ * Infer the type a new token at `path` would naturally take: the effective
+ * type of existing tokens under the nearest ancestor group, when they agree.
+ * Covers both group `$type` inheritance and de facto conventions; ambiguous
+ * or empty ancestors return undefined (keep whatever is selected).
+ */
+function inferTypeForPath(set: TokenSet, path: string): DtcgTokenType | undefined {
+  const segments = path.split(".").slice(0, -1);
+  while (segments.length > 0) {
+    const prefix = `${segments.join(".")}.`;
+    const types = new Set<DtcgTokenType>();
+    for (const token of set.tokens.values()) {
+      if (token.pathString.startsWith(prefix)) types.add(token.type);
+    }
+    if (types.size === 1) return [...types][0];
+    if (types.size > 1) return undefined; // mixed group — don't guess
+    segments.pop(); // empty group — look one level up
+  }
+  return undefined;
+}
+
 export function NewTokenDialog({ setName, onClose }: { setName: string; onClose: () => void }) {
+  const document = useDocumentStore((state) => state.document);
   const execute = useDocumentStore((state) => state.execute);
   const select = useUiStore((state) => state.select);
   const [path, setPath] = useState("");
   const [type, setType] = useState<DtcgTokenType>("color");
+  const [typeTouched, setTypeTouched] = useState(false);
   const [value, setValue] = useState(DEFAULT_VALUES.color ?? "");
   const [error, setError] = useState<string>();
+
+  const onPathChange = (nextPath: string) => {
+    setPath(nextPath);
+    if (typeTouched) return;
+    const set = document.sets.get(setName);
+    const inferred = set ? inferTypeForPath(set, nextPath.trim()) : undefined;
+    if (inferred !== undefined && inferred !== type) {
+      setType(inferred);
+      // Follow with the matching default only while the value is untouched.
+      if (value === (DEFAULT_VALUES[type] ?? "")) setValue(DEFAULT_VALUES[inferred] ?? "");
+    }
+  };
 
   const create = () => {
     try {
@@ -108,7 +143,7 @@ export function NewTokenDialog({ setName, onClose }: { setName: string; onClose:
             value={path}
             data-testid="new-token-path"
             onChange={(event) => {
-              setPath(event.target.value);
+              onPathChange(event.target.value);
             }}
             onKeyDown={(event) => {
               if (event.key === "Enter" && path.trim() !== "") create();
@@ -125,6 +160,7 @@ export function NewTokenDialog({ setName, onClose }: { setName: string; onClose:
             onChange={(event) => {
               const nextType = event.target.value as DtcgTokenType;
               setType(nextType);
+              setTypeTouched(true);
               setValue(DEFAULT_VALUES[nextType] ?? "");
             }}
           >
