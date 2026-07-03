@@ -251,6 +251,21 @@ export function Sidebar() {
         {importError !== undefined && <p className="editor-error">{importError}</p>}
       </div>
 
+      <div className="sidebar-section">
+        <header>
+          <h2>Help</h2>
+        </header>
+        <a
+          className="sidebar-item"
+          href="/guide.html"
+          target="_blank"
+          rel="noreferrer"
+          data-testid="open-guide"
+        >
+          User guide ↗
+        </a>
+      </div>
+
       {editingTheme && (
         <ThemeDialog
           theme={editingTheme}

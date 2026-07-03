@@ -51,6 +51,16 @@ test("command palette: actions and token navigation", async ({ page }) => {
   await expect(page.getByTestId("export-preview")).toBeVisible();
 });
 
+test("the user guide is served and linked from the sidebar", async ({ page }) => {
+  await page.goto("/");
+  const link = page.getByTestId("open-guide");
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", "/guide.html");
+  const response = await page.request.get("/guide.html");
+  expect(response.status()).toBe(200);
+  expect(await response.text()).toContain("User guide");
+});
+
 test("token list is navigable by keyboard", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("token-list").focus();

@@ -71,6 +71,10 @@ body {
   color: var(--text-primary);
 }
 
+a.sidebar-item {
+  text-decoration: none;
+}
+
 .sidebar-item[aria-current="true"] {
   background: var(--surface-selected);
   color: var(--accent-700);
