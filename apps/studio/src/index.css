@@ -124,6 +124,12 @@ body {
   top: 0;
 }
 
+.token-list-row--drop {
+  box-shadow: inset 0 0 0 2px var(--accent-300);
+  border-radius: var(--radius-sm);
+  background: var(--accent-50);
+}
+
 .group-row {
   display: flex;
   align-items: center;

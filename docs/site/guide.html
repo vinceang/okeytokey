@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>okeytokey — user guide</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.65;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 46rem;
+        padding: 3rem 1.5rem 6rem;
+      }
+      h1 {
+        font-size: 1.9rem;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        margin-top: 3rem;
+        font-size: 1.3rem;
+        border-bottom: 1px solid color-mix(in oklch, currentColor 15%, transparent);
+        padding-bottom: 0.3rem;
+      }
+      h3 {
+        margin-top: 1.8rem;
+        font-size: 1.05rem;
+      }
+      code,
+      kbd {
+        font-family: ui-monospace, monospace;
+        font-size: 0.88em;
+        background: color-mix(in oklch, currentColor 8%, transparent);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+      }
+      pre {
+        background: color-mix(in oklch, currentColor 6%, transparent);
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.92em;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.4rem 0.75rem 0.4rem 0;
+        border-bottom: 1px solid color-mix(in oklch, currentColor 12%, transparent);
+        vertical-align: top;
+      }
+      a {
+        color: hsl(220 80% 48%);
+      }
+      .nav {
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
+      .tip {
+        border-left: 3px solid hsl(220 80% 48%);
+        padding: 0.2rem 0 0.2rem 1rem;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="nav"><a href="index.html">← okeytokey</a></p>
+    <h1>User guide</h1>
+    <p>
+      Everything the studio, CLI, and Figma plugin can do, in the order you'll meet it. Start the
+      app with
+      <code>pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm --filter @okeytokey/studio dev</code>
+      and open <code>http://localhost:5173</code>.
+    </p>
+
+    <h2 id="concepts">1. Concepts in two minutes</h2>
+    <p>
+      A <strong>token</strong> is a named design decision — <code>colors.blue.500 = #3b82f6</code>.
+      Tokens live in <strong>groups</strong> (the dots in the path) inside
+      <strong>token sets</strong> (files, e.g. <code>global</code>, <code>semantic</code>,
+      <code>dark</code>). Every token has a <code>$type</code> (color, dimension, typography,
+      shadow…), usually inherited from its group.
+    </p>
+    <ul>
+      <li>
+        <strong>Alias:</strong> a value like <code>{colors.blue.500}</code> points at another token.
+        Change the primitive, every alias follows.
+      </li>
+      <li>
+        <strong>Math:</strong> dimensions and numbers can be expressions —
+        <code>{spacing.base} * 2</code>, <code>({a} + {b}) / 2</code>. Units are checked; no px +
+        rem mixing.
+      </li>
+      <li>
+        <strong>Color functions:</strong> <code>darken({colors.blue.500}, 0.1)</code>,
+        <code>alpha(…, 0.5)</code>, <code>mix(a, b, 0.5)</code> — computed perceptually in
+        OKLCH/OKLAB.
+      </li>
+      <li>
+        <strong>Theme:</strong> an ordered list of sets, each <em>enabled</em>, <em>source</em>, or
+        <em>off</em>. Later sets override earlier ones, which is how a dark theme retints every
+        alias.
+      </li>
+    </ul>
+    <p class="tip">
+      Files are plain W3C DTCG JSON. okeytokey's extras (guidelines, lifecycle, decisions) live
+      under <code>$extensions["com.okeytokey"]</code> — strip them and the file is still valid for
+      any other DTCG tool.
+    </p>
+
+    <h2 id="first-run">2. First run</h2>
+    <p>
+      The onboarding wizard offers three starts: a <strong>starter architecture</strong>
+      (primitive → semantic sets with light/dark themes — recommended for a first look),
+      <strong>import</strong> of existing DTCG/Tokens Studio JSON, or
+      <strong>connect GitHub</strong>. Your work persists in the browser (IndexedDB) automatically —
+      no save button.
+    </p>
+
+    <h2 id="editing">3. Creating and editing tokens</h2>
+    <p>
+      <strong>New token</strong> (toolbar) asks for a path like <code>colors.brand.500</code> —
+      intermediate groups are created for you. Select any token to edit it in the right-hand
+      inspector:
+    </p>
+    <ul>
+      <li>
+        <strong>Colors</strong>: type any CSS syntax (hex, <code>oklch(…)</code>,
+        <code>rgb(…)</code>) or drag the OKLCH sliders. An amber dot warns when a color exceeds the
+        sRGB gamut.
+      </li>
+      <li>
+        <strong>Typography / shadows</strong> get dedicated composers; shadows support multi-layer
+        stacks.
+      </li>
+      <li>
+        <strong>“⤳ Reference another token…”</strong> turns the value into an alias. The picker
+        searches by <em>resolved value</em> too — paste <code>#3b82f6</code> to find the token that
+        holds it. “Detach” bakes the resolved value back in.
+      </li>
+      <li>
+        The <strong>→ line</strong> under the editor always shows the fully resolved value under the
+        active theme.
+      </li>
+    </ul>
+
+    <h2 id="organizing">4. Organizing: rename, drag, filter</h2>
+    <ul>
+      <li>
+        <strong>Rename…</strong> (inspector) renames a token or moves it to a new path, previewing
+        every alias, math expression, and composite that will be rewritten before you confirm. This
+        is the rename-refactor — nothing ever dangles.
+      </li>
+      <li>
+        <strong>Drag a token (or a whole group) onto another group</strong> to move it there; drop
+        on the empty list background to move it to the root. Same refactor engine — references
+        follow, and one <kbd>⌘Z</kbd> reverses the whole move.
+      </li>
+      <li><strong>Filter</strong> (toolbar) matches names <em>and</em> values.</li>
+      <li>Every content edit is undoable: <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd>, 100 steps.</li>
+    </ul>
+
+    <h2 id="themes">5. Themes and theme groups</h2>
+    <p>
+      Add a theme with <strong>+</strong> in the sidebar, then set each set's status in its ⚙
+      dialog: <em>Enabled</em> (resolves and exports), <em>Source</em> (resolves but isn't exported
+      — right for primitive sets), <em>Off</em>. Click a theme to see every resolved value switch
+      live.
+    </p>
+    <p>
+      Give themes a <strong>Group</strong> (e.g. <code>mode</code> for light/dark,
+      <code>brand</code> for brand variants) and the ⊞ button generates every combination —
+      <code>light / brand-b</code> and friends — as ordinary themes you can tweak or delete.
+      Regenerating never overwrites your edits.
+    </p>
+
+    <h2 id="context">6. Decision context and deprecation</h2>
+    <p>
+      The inspector's <strong>Decision context</strong> section stores <em>why</em> a token exists:
+      usage guidelines, a lifecycle (<code>draft → active → deprecated → archived</code>), and a
+      “replaced by” pointer. Set a replacement, hit <strong>Deprecate</strong>, and every token
+      still aliasing the old one gets a diagnostic with a one-click “Point at … instead” fix.
+      Deprecated tokens render struck-through in the list.
+    </p>
+
+    <h2 id="diagnostics">7. Diagnostics</h2>
+    <p>
+      The bar at the bottom of the list live-lints the whole document. Click a row to jump to the
+      offending token; fixes run through the undo stack.
+    </p>
+    <table>
+      <tr>
+        <th>Rule</th>
+        <th>Default</th>
+        <th>Catches</th>
+      </tr>
+      <tr>
+        <td><code>no-broken-references</code></td>
+        <td>error</td>
+        <td>aliases pointing at nothing</td>
+      </tr>
+      <tr>
+        <td><code>no-reference-cycles</code></td>
+        <td>error</td>
+        <td>a → b → a, with the exact path</td>
+      </tr>
+      <tr>
+        <td><code>deprecated-usage</code></td>
+        <td>warn</td>
+        <td>aliases to deprecated tokens (auto-fixable)</td>
+      </tr>
+      <tr>
+        <td><code>no-orphan-tokens</code></td>
+        <td>warn</td>
+        <td>tokens nothing references</td>
+      </tr>
+      <tr>
+        <td><code>contrast</code></td>
+        <td>warn</td>
+        <td>WCAG 2.1 + APCA for declared fg/bg pairs (config)</td>
+      </tr>
+      <tr>
+        <td><code>naming-convention</code></td>
+        <td>off</td>
+        <td>segment patterns, per-type overrides (config)</td>
+      </tr>
+    </table>
+
+    <h2 id="export">8. Exporting code</h2>
+    <p>
+      <strong>Export CSS/SCSS/TS…</strong> (sidebar) previews and downloads: CSS custom properties
+      (optionally keeping aliases as <code>var()</code> chains), SCSS map, TypeScript consts with
+      literal types, or a Tailwind v4 <code>@theme</code> block — each resolved under any theme. For
+      CI, the standalone CLI reads <code>okeytokey.config.json</code>:
+    </p>
+    <pre><code>{
+  "sets": ["tokens/global.json", "tokens/dark.json"],
+  "themes": [ … same shape as the studio's themes … ],
+  "build": {
+    "outDir": "dist/tokens",
+    "targets": [
+      { "format": "css", "file": "tokens.css", "theme": "light", "darkTheme": "dark" },
+      { "format": "ts", "file": "tokens.ts", "theme": "light" }
+    ]
+  }
+}</code></pre>
+    <pre><code>pnpm okeytokey build okeytokey.config.json</code></pre>
+    <p>
+      The <code>darkTheme</code> option emits a <code>prefers-color-scheme: dark</code> block
+      containing only the variables that differ.
+    </p>
+
+    <h2 id="sync">9. GitHub sync</h2>
+    <p>
+      <strong>Sync with GitHub…</strong> takes owner, repo, branch, a path (directory of
+      <code>.json</code> set files), and a fine-grained personal access token with
+      <em>Contents read/write</em> on that repository.
+    </p>
+    <ul>
+      <li>
+        <strong>Run connection doctor</strong> first: it checks token → repo → branch → path in
+        order and tells you exactly which step failed and how to fix it.
+      </li>
+      <li>
+        <strong>Dry-run push</strong> shows the semantic diff (added/removed/renamed/changed tokens,
+        plus how many downstream tokens change after resolution) — the push button only appears
+        after you've seen it. Pushes land as one atomic commit.
+      </li>
+      <li>
+        <strong>Pull</strong> merges token-by-token: edits to different tokens never conflict, even
+        in the same file. Real conflicts are picked per token — keep mine / take remote.
+      </li>
+    </ul>
+
+    <h2 id="figma">10. Figma plugin</h2>
+    <p>
+      Build with <code>pnpm --filter @okeytokey/figma-plugin build</code>, then in Figma desktop:
+      <em>Plugins → Development → Import plugin from manifest…</em> and pick
+      <code>apps/figma-plugin/manifest.json</code>.
+    </p>
+    <ul>
+      <li>
+        <strong>Load DTCG JSON</strong> (export sets from the studio), select canvas nodes, pick a
+        token and a target — fill, stroke, corner radius, padding, gap, or typography — and apply.
+      </li>
+      <li>
+        <strong>Export variables</strong> creates a variable collection with one mode per theme name
+        (comma-separate names in the theme field). <strong>Import variables</strong> goes the other
+        way, producing DTCG sets with a report of anything unmappable.
+      </li>
+      <li>
+        <strong>Pin theme</strong> stores the active mode in the file; new component instances
+        automatically get it re-applied, so they never snap back to the default mode.
+      </li>
+    </ul>
+
+    <h2 id="shortcuts">11. Keyboard shortcuts</h2>
+    <table>
+      <tr>
+        <th>Keys</th>
+        <th>Action</th>
+      </tr>
+      <tr>
+        <td><kbd>⌘K</kbd> / <kbd>Ctrl K</kbd></td>
+        <td>Command palette — actions, theme switching, jump to any token</td>
+      </tr>
+      <tr>
+        <td><kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd></td>
+        <td>Undo / redo</td>
+      </tr>
+      <tr>
+        <td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>Home</kbd> <kbd>End</kbd></td>
+        <td>Move the selection through the token list (focus the list first)</td>
+      </tr>
+      <tr>
+        <td><kbd>Enter</kbd></td>
+        <td>Commit the field you're editing; pick the top palette/alias result</td>
+      </tr>
+      <tr>
+        <td><kbd>Esc</kbd></td>
+        <td>Close any dialog or picker</td>
+      </tr>
+    </table>
+
+    <p class="nav" style="margin-top: 3rem">
+      Deeper reading: per-package READMEs in the repository and the ADRs in
+      <code>docs/adr/</code> (resolution semantics, extension namespace, undo model, sync/merge,
+      theme groups).
+    </p>
+  </body>
+</html>

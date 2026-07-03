@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import {
@@ -14,6 +14,8 @@ import { isReference, referencePath } from "@okeytokey/schema";
 import { ColorSwatch, ReferencePill, TokenRow } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
+import { cmdRenameToken } from "../state/commands.js";
+import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 
 const ROW_HEIGHT = 32;
@@ -100,9 +102,64 @@ export function TokenList({ set, resolver }: TokenListProps) {
   const select = useUiStore((state) => state.select);
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
 
+  const execute = useDocumentStore((state) => state.execute);
+  const [dropTarget, setDropTarget] = useState<string>();
+
   const rows = useMemo(() => buildRows(set, collapsed, filter), [set, collapsed, filter]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Drag-to-reorganize: token and group rows are drag sources; group rows and
+  // the list background (root) are drop targets. A drop is a rename — every
+  // reference updates via the refactor engine, and one undo reverses it.
+  const lastSegment = (path: string) => path.slice(path.lastIndexOf(".") + 1);
+
+  const performDrop = (sourcePath: string, targetGroup: string | undefined) => {
+    setDropTarget(undefined);
+    if (sourcePath === "") return;
+    // Can't drop a group into itself or its own subtree.
+    if (
+      targetGroup !== undefined &&
+      (targetGroup === sourcePath || targetGroup.startsWith(`${sourcePath}.`))
+    ) {
+      return;
+    }
+    const nextPath =
+      targetGroup === undefined
+        ? lastSegment(sourcePath)
+        : `${targetGroup}.${lastSegment(sourcePath)}`;
+    if (nextPath === sourcePath) return;
+    try {
+      execute(cmdRenameToken(sourcePath, nextPath));
+      select({ set: set.name, path: nextPath });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const dragSourceProps = (path: string) => ({
+    draggable: true,
+    onDragStart: (event: React.DragEvent) => {
+      event.dataTransfer.setData("text/plain", path);
+      event.dataTransfer.effectAllowed = "move";
+    },
+  });
+
+  const dropTargetProps = (groupPath: string | undefined) => ({
+    onDragOver: (event: React.DragEvent) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDropTarget(groupPath ?? "");
+    },
+    onDragLeave: () => {
+      setDropTarget(undefined);
+    },
+    onDrop: (event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      performDrop(event.dataTransfer.getData("text/plain"), groupPath);
+    },
+  });
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
@@ -160,6 +217,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
       aria-label="Tokens"
       tabIndex={0}
       onKeyDown={onKeyDown}
+      {...dropTargetProps(undefined)}
     >
       <div className="token-list-inner" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -171,7 +229,13 @@ export function TokenList({ set, resolver }: TokenListProps) {
           };
           if (row.kind === "group") {
             return (
-              <div key={virtualRow.key} className="token-list-row" style={style}>
+              <div
+                key={virtualRow.key}
+                className={`token-list-row${dropTarget === row.path ? " token-list-row--drop" : ""}`}
+                style={style}
+                {...dragSourceProps(row.path)}
+                {...dropTargetProps(row.path)}
+              >
                 <button
                   type="button"
                   className="group-row"
@@ -196,6 +260,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
               className="token-list-row"
               style={style}
               data-testid={`token-${token.pathString}`}
+              {...dragSourceProps(token.pathString)}
             >
               <TokenRow
                 name={row.name}
