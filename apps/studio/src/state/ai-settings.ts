@@ -1,6 +1,7 @@
 import {
   ANTHROPIC_DEFAULT_MODEL,
   AnthropicProvider,
+  OPENAI_COMPATIBLE_PRESETS,
   OpenAiCompatibleProvider,
   type AiProvider,
 } from "@okeytokey/ai";
@@ -29,10 +30,13 @@ export interface AiSettings {
 export const AI_SETTINGS_KEY = "okeytokey.ai.provider";
 
 export function defaultAiSettings(): AiSettings {
+  // Prefill mirrors the first (lowest-friction) preset so the form opens
+  // coherent; nothing is contacted until the user acts.
+  const [first] = OPENAI_COMPATIBLE_PRESETS;
   return {
     provider: "none",
-    baseUrl: "http://localhost:11434/v1",
-    model: "llama3.1",
+    baseUrl: first?.baseUrl ?? "",
+    model: first?.defaultModel ?? "",
     apiKey: "",
     anthropicApiKey: "",
     anthropicModel: ANTHROPIC_DEFAULT_MODEL,

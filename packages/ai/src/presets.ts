@@ -21,16 +21,16 @@ export interface ProviderPreset {
   readonly setupCommandTemplate?: string;
 }
 
+/** Ordered by setup ease: key-only first, app installs after. */
 export const OPENAI_COMPATIBLE_PRESETS: readonly ProviderPreset[] = [
   {
-    id: "ollama",
-    label: "Ollama (local)",
-    baseUrl: "http://localhost:11434/v1",
-    defaultModel: "llama3.1",
-    requiresApiKey: false,
-    local: true,
-    note: "Needs the free Ollama app (ollama.com) and a downloaded model — 'ollama pull llama3.1' fetches ~5 GB once. Then start it so the browser may call it:",
-    setupCommandTemplate: 'OLLAMA_ORIGINS="{origin}" ollama serve',
+    id: "openrouter",
+    label: "OpenRouter (your key)",
+    baseUrl: "https://openrouter.ai/api/v1",
+    defaultModel: "anthropic/claude-sonnet-4.6",
+    requiresApiKey: true,
+    local: false,
+    note: "Needs an openrouter.ai account and API key; requests are billed there. No installs — the lowest-friction option if cloud is acceptable.",
   },
   {
     id: "lmstudio",
@@ -42,12 +42,13 @@ export const OPENAI_COMPATIBLE_PRESETS: readonly ProviderPreset[] = [
     note: "Needs the free LM Studio app (lmstudio.ai) with a model downloaded. In its Developer tab: start the server and enable CORS.",
   },
   {
-    id: "openrouter",
-    label: "OpenRouter (your key)",
-    baseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "anthropic/claude-sonnet-4.6",
-    requiresApiKey: true,
-    local: false,
-    note: "Needs an openrouter.ai account and API key; requests are billed there. No installs — the lowest-friction option if cloud is acceptable.",
+    id: "ollama",
+    label: "Ollama (local)",
+    baseUrl: "http://localhost:11434/v1",
+    defaultModel: "llama3.1",
+    requiresApiKey: false,
+    local: true,
+    note: "Needs the free Ollama app (ollama.com) and a downloaded model — 'ollama pull llama3.1' fetches ~5 GB once. Then start it so the browser may call it:",
+    setupCommandTemplate: 'OLLAMA_ORIGINS="{origin}" ollama serve',
   },
 ];

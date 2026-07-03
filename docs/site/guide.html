@@ -319,10 +319,11 @@
     <ul>
       <li>
         <strong>Local / OpenAI-compatible</strong> talks to any
-        <code>/v1/chat/completions</code> server. Presets: <em>Ollama</em> (start it with
-        <code>OLLAMA_ORIGINS</code> set to this app's origin so the browser may call it),
-        <em>LM Studio</em> (enable CORS in its server settings), and <em>OpenRouter</em> with your
-        own key. With a local endpoint, token data never leaves your machine.
+        <code>/v1/chat/completions</code> server. Presets, ordered by setup ease:
+        <em>OpenRouter</em> (your own key, no installs), <em>LM Studio</em> (free app; enable CORS
+        in its server settings), and <em>Ollama</em> (free app; the dialog shows the exact
+        <code>OLLAMA_ORIGINS</code> launch command to copy). With a local endpoint, token data never
+        leaves your machine.
       </li>
       <li>
         <strong>Anthropic</strong> uses your own <code>sk-ant-…</code> API key directly from the
