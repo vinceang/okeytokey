@@ -281,6 +281,23 @@ a.sidebar-item {
   gap: var(--space-2) var(--space-3);
 }
 
+/* The visible swatch doubles as the native color-picker trigger. */
+.color-picker-swatch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  cursor: pointer;
+}
+
+.color-picker-swatch input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .oklch-sliders {
   display: flex;
   flex-direction: column;

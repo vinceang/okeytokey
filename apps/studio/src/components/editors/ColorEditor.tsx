@@ -61,10 +61,27 @@ export function ColorEditor({ value, onCommit }: ColorEditorProps) {
     if (!valid) setDraft(value);
   };
 
+  // Native OS color picker. input[type=color] speaks 6-digit hex only, so it
+  // drops alpha/wide-gamut on the way in; picking keeps whatever it returns.
+  const pickerHex = valid ? formatColor(parseColor(draft), "hex").slice(0, 7) : "#000000";
+
   return (
     <>
       <div className="editor-row">
-        <ColorSwatch color={valid ? draft : "transparent"} gamutWarning={warning !== undefined} />
+        <span className="color-picker-swatch">
+          <ColorSwatch color={valid ? draft : "transparent"} gamutWarning={warning !== undefined} />
+          <input
+            type="color"
+            value={pickerHex}
+            aria-label="Pick color"
+            title="Open the color picker"
+            data-testid="color-picker"
+            onChange={(event) => {
+              setDraft(event.target.value);
+              onCommit(event.target.value);
+            }}
+          />
+        </span>
         <TextInput
           mono
           value={draft}

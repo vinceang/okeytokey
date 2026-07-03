@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Resolver } from "@okeytokey/core";
 import { TextInput, TokenTypeIcon } from "@okeytokey/ui";
@@ -19,6 +19,22 @@ export interface AliasPickerProps {
  */
 export function AliasPicker({ resolver, excludePath, onPick, onClose }: AliasPickerProps) {
   const [query, setQuery] = useState("");
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Dismiss on any click outside the popover (Escape already closes). The
+  // listener attaches after the opening click's event cycle, so opening
+  // doesn't immediately close it.
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [onClose]);
 
   const options = useMemo(() => {
     const lower = query.trim().toLowerCase();
@@ -43,7 +59,7 @@ export function AliasPicker({ resolver, excludePath, onPick, onClose }: AliasPic
   }, [resolver, query, excludePath]);
 
   return (
-    <div className="alias-popover" data-testid="alias-popover">
+    <div className="alias-popover" data-testid="alias-popover" ref={popoverRef}>
       <TextInput
         autoFocus
         placeholder="Search by name or resolved value…"

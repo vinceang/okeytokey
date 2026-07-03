@@ -37,6 +37,22 @@ test("create set → add token → alias → edit → undo/redo", async ({ page 
   await expect(page.getByTestId("resolved-preview")).toContainText("#00aa88");
 });
 
+test("native color picker commits and alias popover closes on outside click", async ({ page }) => {
+  await page.goto("/");
+
+  // The swatch hosts a native color input; setting it commits the value.
+  await page.getByTestId("token-colors.blue.500").click();
+  await page.getByTestId("color-picker").fill("#a1b2c3");
+  await expect(page.getByTestId("resolved-preview")).toContainText("#a1b2c3");
+  await expect(page.getByTestId("color-input")).toHaveValue("#a1b2c3");
+
+  // Alias popover: opens from the picker button, closes on an outside click.
+  await page.getByTestId("make-alias").click();
+  await expect(page.getByTestId("alias-popover")).toBeVisible();
+  await page.getByTestId("inspector").getByRole("heading", { name: "500" }).click();
+  await expect(page.getByTestId("alias-popover")).not.toBeVisible();
+});
+
 test("theme switching changes resolution", async ({ page }) => {
   await page.goto("/");
 
