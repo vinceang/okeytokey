@@ -32,7 +32,10 @@ export interface ScaleEntry {
   /** Full token path, e.g. "colors.blue.300". */
   readonly path: string;
   readonly step: number;
-  /** Hex when the color fits sRGB, oklch() CSS otherwise. */
+  /**
+   * Generated entries are always sRGB hex (out-of-gamut interpolants are
+   * chroma-clamped); anchor entries keep their author-written syntax.
+   */
   readonly value: string;
   /** True for pre-existing anchors (never overwritten). */
   readonly anchor: boolean;
