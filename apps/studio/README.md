@@ -8,7 +8,7 @@ The okeytokey web token editor (Vite + React 19 + Zustand).
   command with 100-step undo/redo (⌘Z / ⇧⌘Z) — see `docs/adr/0003-undo-model.md`
 - **Virtualized token tree** (TanStack Virtual): collapsible groups, smooth at
   10,000+ tokens (perf-tested in `e2e/perf.spec.ts`)
-- **Type-specific editors**: OKLCH-capable color editor with gamut warnings,
+- **Type-specific editors**: color editor with native OS picker, OKLCH sliders, and gamut warnings,
   typography composer, shadow stack editor, quantity/text editors, JSON fallback
 - **Alias picker** searching by name _and_ resolved value; detach/change aliases
 - **Themes**: per-set enabled/source/disabled statuses, live resolution switching

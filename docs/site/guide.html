@@ -135,8 +135,10 @@
     </p>
     <ul>
       <li>
-        <strong>Colors</strong>: type any CSS syntax (hex, <code>oklch(…)</code>,
-        <code>rgb(…)</code>) or drag the OKLCH sliders. An amber dot warns when a color exceeds the
+        <strong>Colors</strong>: click the swatch to open your OS color picker, type any CSS syntax
+        (hex, <code>oklch(…)</code>, <code>rgb(…)</code>), or drag the OKLCH sliders. The native
+        picker speaks opaque 6-digit hex only — use the text field or the A slider for alpha, and
+        <code>oklch(…)</code> for wide-gamut values. An amber dot warns when a color exceeds the
         sRGB gamut.
       </li>
       <li>
@@ -146,7 +148,9 @@
       <li>
         <strong>“⤳ Reference another token…”</strong> turns the value into an alias. The picker
         searches by <em>resolved value</em> too — paste <code>#3b82f6</code> to find the token that
-        holds it. “Detach” bakes the resolved value back in.
+        holds it; click anywhere outside (or <kbd>Esc</kbd>) to dismiss it. While a value is an
+        alias, “Change…” retargets the reference and “Detach” bakes the resolved value back in —
+        detach first if you want to pick a direct color.
       </li>
       <li>
         The <strong>→ line</strong> under the editor always shows the fully resolved value under the
