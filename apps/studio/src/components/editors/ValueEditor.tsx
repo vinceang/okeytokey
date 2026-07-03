@@ -8,6 +8,7 @@ import { safeResolve } from "../../hooks/use-resolver.js";
 import { AliasPicker } from "./AliasPicker.js";
 import { ColorEditor } from "./ColorEditor.js";
 import { ColorFormatBar } from "./ColorFormatBar.js";
+import { DimensionUnitBar } from "./DimensionUnitBar.js";
 import { ShadowEditor } from "./ShadowEditor.js";
 import { TypographyEditor } from "./TypographyEditor.js";
 
@@ -169,6 +170,15 @@ export function ValueEditor({ token, resolver, onCommit }: ValueEditorProps) {
       editor = <TextValueEditor value={value} numeric onCommit={onCommit} />;
       break;
     case "dimension":
+      editor = (
+        <>
+          <TextValueEditor value={value} numeric={false} onCommit={onCommit} />
+          {typeof value === "string" && (
+            <DimensionUnitBar path={token.pathString} value={value} onCommit={onCommit} />
+          )}
+        </>
+      );
+      break;
     case "duration":
     case "fontWeight":
     case "fontFamily":

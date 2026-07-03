@@ -41,6 +41,10 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
 
 - **Lint configuration UI** — `okeytokey.config.json` lint levels and contrast pairs
   are engine-ready; the studio should let you edit them (today: defaults only).
+- **Export-time unit transform (px → rem)** — the editor's px/rem switcher rewrites
+  source files; the global "I want rem in my shipped CSS regardless of authoring
+  unit" belongs in the export pipeline as a Style-Dictionary-style transform with a
+  configurable root size.
 - **Type/spacing scale generators** — extend Phase 7.0's color Scale Generator to
   modular type scales and spacing ramps.
 - **Additional sync providers** — GitLab / Azure DevOps / Bitbucket behind the

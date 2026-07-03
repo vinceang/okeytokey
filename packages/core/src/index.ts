@@ -110,6 +110,15 @@ export {
 } from "./color/convert.js";
 
 export {
+  REM_BASE_PX,
+  convertDimensionLiteral,
+  planDimensionUnitConversion,
+  type DimensionUnit,
+  type UnitConversionEntry,
+  type UnitConversionPlan,
+} from "./dimension/convert.js";
+
+export {
   DEFAULT_SCALE_STEPS,
   SCALE_GENERATOR_ID,
   planColorScale,

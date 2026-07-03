@@ -144,6 +144,14 @@
         the group in one undoable step. Aliases and color functions keep their form.
       </li>
       <li>
+        <strong>Dimensions</strong> get the same treatment for units: a <strong>px / rem</strong>
+        switcher converts the value at the CSS convention of 1rem&nbsp;=&nbsp;16px (stated in the
+        bar), then offers to convert the rest of the group. Unlike color notation this changes the
+        number, not just the syntax — and converting a group together keeps math expressions
+        consistent, since px and rem never mix inside an expression. Aliases and math keep their
+        form; expressions over a converted base resolve in the new unit automatically.
+      </li>
+      <li>
         <strong>Typography / shadows</strong> get dedicated composers; shadows support multi-layer
         stacks.
       </li>
