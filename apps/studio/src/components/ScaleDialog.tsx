@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { DEFAULT_SCALE_STEPS, planColorScale } from "@okeytokey/core";
+import { DEFAULT_SCALE_STEPS, TokenParseError, planColorScale } from "@okeytokey/core";
 import { Button, ColorSwatch, Field, TextInput } from "@okeytokey/ui";
 
 import { cmdApplyFix } from "../state/commands.js";
@@ -40,10 +40,15 @@ export function ScaleDialog({ onClose }: { onClose: () => void }) {
         error: undefined,
       };
     } catch (planError) {
-      return {
-        plan: undefined,
-        error: planError instanceof Error ? planError.message : String(planError),
-      };
+      // TokenParseError wraps issues in a "Token set X is invalid" header
+      // meant for parse failures; here the issue text alone reads better.
+      const message =
+        planError instanceof TokenParseError
+          ? planError.issues.map((issue) => issue.message).join(" ")
+          : planError instanceof Error
+            ? planError.message
+            : String(planError);
+      return { plan: undefined, error: message };
     }
   }, [document, setName, groupPath, stepsText]);
 

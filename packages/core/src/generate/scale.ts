@@ -76,6 +76,9 @@ export function planColorScale(
   const resolver = createResolver(document);
   const prefix = `${groupPath}.`;
   const anchorNodes: { step: number; token: TokenNode; color: CuloriColor; css: string }[] = [];
+  // Numeric-named children that can't serve as anchors, with the reason —
+  // "found 1" without saying why 500 didn't count is a support ticket.
+  const excluded: string[] = [];
 
   for (const token of set.tokens.values()) {
     if (!token.pathString.startsWith(prefix)) continue;
@@ -84,10 +87,16 @@ export function planColorScale(
     let resolvedValue: unknown;
     try {
       resolvedValue = resolver.resolve(token.pathString).value;
-    } catch {
-      continue; // Broken anchors are diagnosed by lint, not here.
+    } catch (error) {
+      excluded.push(`${name} (${error instanceof Error ? error.message : "does not resolve"})`);
+      continue;
     }
-    if (typeof resolvedValue !== "string" || !isColor(resolvedValue)) continue;
+    if (typeof resolvedValue !== "string" || !isColor(resolvedValue)) {
+      excluded.push(
+        `${name} (resolves to ${JSON.stringify(resolvedValue)}, which is not a color — its raw value is ${JSON.stringify(token.value)})`,
+      );
+      continue;
+    }
     anchorNodes.push({
       step: Number(name),
       token,
@@ -98,10 +107,15 @@ export function planColorScale(
 
   anchorNodes.sort((a, b) => a.step - b.step);
   if (anchorNodes.length < 2) {
+    const found =
+      anchorNodes.length === 0
+        ? "none found"
+        : `found only ${anchorNodes.map((anchor) => String(anchor.step)).join(", ")}`;
     fail(
       setName,
       groupPath,
-      `Need at least two numeric color anchors in "${groupPath}" (found ${String(anchorNodes.length)})`,
+      `Need at least two numeric color anchors in "${groupPath}" — ${found}.` +
+        (excluded.length > 0 ? ` Excluded: ${excluded.join("; ")}.` : ""),
     );
   }
 

@@ -95,6 +95,23 @@ describe("planColorScale", () => {
     expect(() => planColorScale(doc(ANCHORS), "nope", "colors.blue")).toThrow(/Set does not exist/);
   });
 
+  it("explains why numeric children were excluded from the anchors", () => {
+    // A numeric child aliasing a dimension is not a color anchor — say so.
+    const broken = doc(`{
+      "spacing": { "$type": "dimension", "lg": { "$value": "32px" } },
+      "colors": {
+        "$type": "color",
+        "blue": {
+          "500": { "$value": "{spacing.lg}" },
+          "600": { "$value": "#2563eb" }
+        }
+      }
+    }`);
+    expect(() => planColorScale(broken, "global", "colors.blue")).toThrow(
+      /found only 600.*Excluded: 500 \(resolves to "32px".*raw value is "\{spacing\.lg\}"/,
+    );
+  });
+
   it("exports sensible default steps", () => {
     expect(DEFAULT_SCALE_STEPS).toContain(50);
     expect(DEFAULT_SCALE_STEPS).toContain(950);
