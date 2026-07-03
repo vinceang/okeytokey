@@ -18,6 +18,18 @@ The okeytokey web token editor (Vite + React 19 + Zustand).
 - Filter matches token names and values; decision-context metadata
   (guidelines, lifecycle, decisions) surfaces in the inspector
 
+## Phase 3 additions
+
+- **Diagnostics panel** (bottom drawer): live lint over the whole document —
+  broken references, cycles, orphans, deprecated usage (with one-click fixes
+  through the undo stack), contrast and naming when configured. Click to navigate.
+- **Rename-with-refactor**: renames a token or group everywhere, with a preview of
+  every reference edit before applying; one undo reverses the whole refactor.
+- **"Used by" panel**: reverse reference graph on every token, click-to-navigate
+  (lands in the dependent's owning set).
+- **Decision-context editing**: guidelines, lifecycle, and replaced-by are editable;
+  the Deprecate button stamps `$deprecated` + lifecycle in one command.
+
 ## Layout
 
 - `src/state/` — commands, document store (undo history), UI store, Dexie persistence

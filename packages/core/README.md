@@ -50,6 +50,38 @@ culori-backed. `parseColor` / `formatColor` (hex, rgb, hsl, oklch, oklab, displa
 resolver-level `lighten(…)` / `darken(…)` / `alpha(…)` / `mix(…)` expressions
 (nesting supported).
 
+### `validate/`
+
+The lint engine: `lintDocument(document, config?, options?)` builds shared context
+(resolver, reference graph, visible tokens) once and runs every enabled rule,
+returning structured diagnostics `{ ruleId, severity, tokenPath, setName, message,
+fix? }` (fixes are `document -> document` functions). Rules configure ESLint-style
+(`off/warn/error`, or `[level, options]`); unknown rule ids surface as diagnostics.
+First-party rules:
+
+- `no-broken-references` (error), `no-reference-cycles` (error, deduped per cycle)
+- `naming-convention` (off by default; base + per-type segment patterns)
+- `contrast` (warn) — WCAG 2.1 ratios and APCA Lc for declared fg/bg pairs
+  (`color/contrast.ts` exports `wcagContrast`, `wcagLevel`, `apcaContrast`)
+- `no-orphan-tokens` (warn), `deprecated-usage` (warn, with a one-click retarget fix)
+
+### `diff/`
+
+`diffDocuments(before, after)` — semantic diff per set (added / removed / renamed via
+identical-signature heuristic / value-changed / type-changed) plus **transitive impact
+analysis**: `impactedPaths` is every token whose _resolved_ value changes,
+`downstreamPaths` excludes directly edited tokens ("this change affects 47 tokens").
+
+### `refactor/`
+
+- `planRename(document, from, to)` → `RenamePlan` with `movedIn` sets and every
+  `referenceEdit` for preview; `apply()` executes atomically across all sets,
+  rewriting references inside aliases, math expressions, and composite sub-values.
+  Group renames move the whole subtree. `renameToken` is plan+apply in one call.
+- `planMoveToSet(document, path, fromSet, toSet)` — cross-set move with metadata.
+- `deprecate(document, path, replacement?)` — sets `$deprecated` plus
+  `lifecycle: "deprecated"` / `replacedBy` in the extension namespace.
+
 ### `mutate/`
 
 Persistent (immutable) mutations — every function returns a new `TokenSet` /

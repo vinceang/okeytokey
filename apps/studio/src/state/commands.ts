@@ -2,7 +2,9 @@ import {
   addSet,
   createToken,
   deleteToken,
+  deprecate,
   emptySet,
+  planRename,
   removeSet,
   renameSet,
   setGroupMeta,
@@ -120,6 +122,46 @@ export function cmdRenameSet(from: string, to: string): Command {
     label: `Rename set ${from} → ${to}`,
     run(document) {
       return { document: renameSet(document, from, to), inverse: cmdRenameSet(to, from) };
+    },
+  };
+}
+
+/** Apply a lint fix (document -> document) through the undo stack. */
+export function cmdApplyFix(fix: {
+  label: string;
+  apply: (document: TokenDocument) => TokenDocument;
+}): Command {
+  return {
+    label: fix.label,
+    run(document) {
+      return { document: fix.apply(document), inverse: restoreDocument(fix.label, document) };
+    },
+  };
+}
+
+/** Rename a token/group everywhere (rename-with-refactor). */
+export function cmdRenameToken(fromPath: string, toPath: string): Command {
+  return {
+    label: `Rename ${fromPath} → ${toPath}`,
+    run(document) {
+      const next = planRename(document, fromPath, toPath).apply();
+      return {
+        document: next,
+        inverse: restoreDocument(`Rename ${fromPath} → ${toPath}`, document),
+      };
+    },
+  };
+}
+
+/** Deprecate a token, optionally pointing at its replacement. */
+export function cmdDeprecate(path: string, replacementPath?: string): Command {
+  return {
+    label: `Deprecate ${path}`,
+    run(document) {
+      return {
+        document: deprecate(document, path, replacementPath),
+        inverse: restoreDocument(`Deprecate ${path}`, document),
+      };
     },
   };
 }

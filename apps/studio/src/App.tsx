@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Button, TextInput } from "@okeytokey/ui";
 
+import { DiagnosticsPanel } from "./components/DiagnosticsPanel.js";
 import { Inspector } from "./components/Inspector.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { TokenList } from "./components/TokenList.js";
@@ -122,6 +123,7 @@ export function App() {
             <p>Create a token set in the sidebar to get started.</p>
           </div>
         )}
+        <DiagnosticsPanel />
       </main>
       {selection ? (
         <Inspector selection={selection} resolver={resolver} />

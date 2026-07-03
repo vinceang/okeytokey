@@ -28,8 +28,8 @@ violations and circular dependencies fail CI.
 | 0 — Scaffold                                 | ✅ Done                   |
 | 1 — Core + schema (parse, resolve, color)    | ✅ Done (ADRs 0001, 0002) |
 | 2 — Studio editor (CRUD, undo, persistence)  | ✅ Done (ADR 0003)        |
-| 3 — Validation, diff, refactor               | Next                      |
-| 4 — Sync + transforms                        | Planned                   |
+| 3 — Validation, diff, refactor               | ✅ Done                   |
+| 4 — Sync + transforms                        | Next                      |
 | 5 — Figma plugin                             | Planned                   |
 | 6 — Polish (onboarding, palette, a11y, perf) | Planned                   |
 

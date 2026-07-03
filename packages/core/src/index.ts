@@ -88,6 +88,48 @@ export {
 } from "./color/color.js";
 
 export {
+  apcaContrast,
+  relativeLuminance,
+  wcagContrast,
+  wcagLevel,
+  type WcagLevel,
+} from "./color/contrast.js";
+
+export {
+  diffDocuments,
+  type DiffOptions,
+  type DocumentDiff,
+  type SetDiff,
+  type TokenChange,
+} from "./diff/diff.js";
+
+export {
+  deprecate,
+  planMoveToSet,
+  planRename,
+  renameToken,
+  type MovePlan,
+  type ReferenceEdit,
+  type RenamePlan,
+} from "./refactor/refactor.js";
+
+export { lintDocument, type LintOptions } from "./validate/engine.js";
+export { BUILTIN_RULES } from "./validate/rules.js";
+export type {
+  ContrastOptions,
+  ContrastPair,
+  Diagnostic,
+  DiagnosticFix,
+  LintConfig,
+  LintRule,
+  NamingConventionOptions,
+  RuleContext,
+  RuleSetting,
+  Severity,
+  SeverityConfig,
+} from "./validate/types.js";
+
+export {
   createThemeResolver,
   emittedPaths,
   emittedSets,

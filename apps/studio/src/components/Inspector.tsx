@@ -4,9 +4,17 @@ import { gamutWarning, isColor, parseColor, type Resolver } from "@okeytokey/cor
 import { Button, ColorSwatch, Field, TextInput, TokenTypeIcon } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
-import { cmdDeleteToken, cmdSetTokenMeta, cmdSetTokenValue } from "../state/commands.js";
+import {
+  cmdDeleteToken,
+  cmdDeprecate,
+  cmdSetTokenMeta,
+  cmdSetTokenValue,
+} from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore, type TokenSelection } from "../state/ui-store.js";
+import { DecisionContextEditor } from "./DecisionContextEditor.js";
+import { RenameDialog } from "./RenameDialog.js";
+import { UsagePanel } from "./UsagePanel.js";
 import { ValueEditor } from "./editors/ValueEditor.js";
 
 function LifecycleBadge({ lifecycle }: { lifecycle: string }) {
@@ -24,6 +32,7 @@ export function Inspector({
   const execute = useDocumentStore((state) => state.execute);
   const select = useUiStore((state) => state.select);
   const [error, setError] = useState<string>();
+  const [renaming, setRenaming] = useState(false);
 
   const token = document.sets.get(selection.set)?.tokens.get(selection.path);
   if (!token) {
@@ -59,7 +68,19 @@ export function Inspector({
     <aside className="studio-inspector" data-testid="inspector">
       <header className="inspector-header">
         <div className="token-path">{`${selection.set} · ${token.pathString}`}</div>
-        <h2>{token.name}</h2>
+        <div className="editor-row">
+          <h2>{token.name}</h2>
+          <Button
+            variant="ghost"
+            title="Rename everywhere (updates all references)"
+            data-testid="rename-token"
+            onClick={() => {
+              setRenaming(true);
+            }}
+          >
+            Rename…
+          </Button>
+        </div>
         <div className="editor-row" style={{ marginTop: "var(--space-2)" }}>
           <TokenTypeIcon type={token.type} />
           <span style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>
@@ -152,18 +173,44 @@ export function Inspector({
         )}
       </section>
 
+      <DecisionContextEditor setName={selection.set} path={token.pathString} meta={meta} />
+
+      <UsagePanel path={token.pathString} resolver={resolver} />
+
       <section className="inspector-section">
-        <Button
-          variant="danger"
-          data-testid="delete-token"
-          onClick={() => {
-            run(cmdDeleteToken(selection.set, token.pathString));
-            select(undefined);
-          }}
-        >
-          Delete token
-        </Button>
+        <div className="editor-row">
+          <Button
+            variant="secondary"
+            data-testid="deprecate-token"
+            disabled={token.okeytokey?.lifecycle === "deprecated"}
+            onClick={() => {
+              run(cmdDeprecate(token.pathString, meta?.replacedBy));
+            }}
+          >
+            Deprecate
+          </Button>
+          <Button
+            variant="danger"
+            data-testid="delete-token"
+            onClick={() => {
+              run(cmdDeleteToken(selection.set, token.pathString));
+              select(undefined);
+            }}
+          >
+            Delete token
+          </Button>
+        </div>
       </section>
+
+      {renaming && (
+        <RenameDialog
+          path={token.pathString}
+          setName={selection.set}
+          onClose={() => {
+            setRenaming(false);
+          }}
+        />
+      )}
     </aside>
   );
 }
