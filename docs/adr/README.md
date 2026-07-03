@@ -12,3 +12,6 @@ numbered, with Status / Context / Decision / Consequences sections.
   structural-snapshot inverses over the immutable document (Phase 2)
 - [0004 — Sync and merge strategy](0004-sync-merge-strategy.md): traced operations,
   connection doctor, atomic Git Data API writes, token-level three-way merge (Phase 4)
+- [0005 — Theme groups and matrix expansion](0005-theme-groups.md): dimensions via
+  `group`, user-triggered additive expansion, generated combinations are plain
+  themes with name-keyed dedupe (post-v1)

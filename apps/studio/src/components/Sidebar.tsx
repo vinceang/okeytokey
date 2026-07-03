@@ -1,6 +1,13 @@
 import { useRef, useState } from "react";
 
-import { parseTokenSet, serializeTokenSet, type Theme } from "@okeytokey/core";
+import {
+  expandThemeMatrix,
+  parseTokenSet,
+  serializeTokenSet,
+  themeFromCombination,
+  type Theme,
+  type ThemeGroup,
+} from "@okeytokey/core";
 import { Button } from "@okeytokey/ui";
 
 import { cmdAddSet, cmdImportSet, cmdRemoveSet } from "../state/commands.js";
@@ -52,6 +59,30 @@ export function Sidebar() {
     };
     setThemes([...themes, theme]);
     setEditingTheme(theme);
+  };
+
+  // Cartesian expansion (see ADR 0005): themes sharing a `group` form a
+  // dimension; two or more dimensions can generate their combinations.
+  const groupedThemes = new Map<string, Theme[]>();
+  for (const theme of themes) {
+    if (theme.group === undefined) continue;
+    groupedThemes.set(theme.group, [...(groupedThemes.get(theme.group) ?? []), theme]);
+  }
+  const canExpandMatrix = groupedThemes.size >= 2;
+
+  const expandMatrix = () => {
+    const dimensions: ThemeGroup[] = [...groupedThemes.entries()].map(([name, options]) => ({
+      name,
+      options,
+    }));
+    const combinations = expandThemeMatrix(dimensions).map(themeFromCombination);
+    const existing = new Set(themes.map((theme) => theme.name));
+    const fresh = combinations.filter((combination) => !existing.has(combination.name));
+    if (fresh.length === 0) {
+      window.alert("All combinations already exist.");
+      return;
+    }
+    setThemes([...themes, ...fresh]);
   };
 
   const importFile = (file: File) => {
@@ -111,9 +142,21 @@ export function Sidebar() {
       <div className="sidebar-section" data-testid="themes-section">
         <header>
           <h2>Themes</h2>
-          <Button variant="ghost" onClick={addTheme} title="New theme" data-testid="add-theme">
-            +
-          </Button>
+          <span>
+            {canExpandMatrix && (
+              <Button
+                variant="ghost"
+                onClick={expandMatrix}
+                title="Generate every combination across theme groups (brand × mode)"
+                data-testid="expand-matrix"
+              >
+                ⊞
+              </Button>
+            )}
+            <Button variant="ghost" onClick={addTheme} title="New theme" data-testid="add-theme">
+              +
+            </Button>
+          </span>
         </header>
         <button
           type="button"
@@ -137,6 +180,7 @@ export function Sidebar() {
               }}
             >
               {theme.name}
+              {theme.group !== undefined && <span className="count">{theme.group}</span>}
             </button>
             <Button
               variant="ghost"

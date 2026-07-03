@@ -206,10 +206,36 @@ export function ThemeDialog({ theme, onClose }: { theme: Theme; onClose: () => v
     onClose();
   };
 
+  const setGroup = (group: string) => {
+    setThemes(
+      themes.map((candidate) =>
+        candidate.name === theme.name
+          ? { ...candidate, group: group.trim() === "" ? undefined : group.trim() }
+          : candidate,
+      ),
+    );
+  };
+
   const current = themes.find((candidate) => candidate.name === theme.name) ?? theme;
 
   return (
     <Dialog title={`Theme: ${theme.name}`} onClose={onClose}>
+      <Field label="Group (dimension, e.g. mode or brand)">
+        {(id) => (
+          <TextInput
+            id={id}
+            key={`${theme.name}-group-${current.group ?? ""}`}
+            defaultValue={current.group ?? ""}
+            placeholder="mode"
+            data-testid="theme-group-input"
+            onBlur={(event) => {
+              if (event.target.value.trim() !== (current.group ?? "")) {
+                setGroup(event.target.value);
+              }
+            }}
+          />
+        )}
+      </Field>
       {[...document.sets.keys()].map((setName) => (
         <div className="editor-row" key={setName} style={{ justifyContent: "space-between" }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)" }}>
