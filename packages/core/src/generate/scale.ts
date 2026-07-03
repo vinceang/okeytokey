@@ -71,9 +71,12 @@ function fail(setName: string, path: string, message: string): never {
 
 /**
  * Plan filling a color scale. Anchors are the group's direct children whose
- * names are integers and whose resolved values are colors; at least two are
- * required. Missing requested steps strictly between the outermost anchors
- * are interpolated between their nearest anchors in OKLCH.
+ * names are integers and whose resolved values are colors. Two or more:
+ * missing steps between the outermost anchors interpolate between their
+ * nearest neighbors. Exactly one: virtual near-white/near-dark endpoints
+ * (hue from the seed) are synthesized so a full ramp generates around it.
+ * Explicit `lightEnd`/`darkEnd` options replace the synthesized endpoints
+ * and extend the range in multi-anchor groups.
  */
 export function planColorScale(
   document: TokenDocument,
