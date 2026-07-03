@@ -1,0 +1,38 @@
+{
+  "name": "@okeytokey/core",
+  "version": "0.0.0",
+  "description": "Headless design token engine: parsing, resolution, validation, diffing, refactoring.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@okeytokey/schema": "workspace:*",
+    "culori": "^4.0.2"
+  },
+  "devDependencies": {
+    "@okeytokey/eslint-config": "workspace:*",
+    "@okeytokey/tsconfig": "workspace:*",
+    "@okeytokey/vitest-config": "workspace:*",
+    "@types/culori": "^4.0.1",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.20.0",
+    "fast-check": "^4.8.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

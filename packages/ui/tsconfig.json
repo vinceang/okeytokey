@@ -1,0 +1,5 @@
+{
+  "extends": "@okeytokey/tsconfig/react-library.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src"]
+}

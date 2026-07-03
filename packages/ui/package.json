@@ -1,0 +1,41 @@
+{
+  "name": "@okeytokey/ui",
+  "version": "0.0.0",
+  "description": "Shared React component library for the okeytokey studio and Figma plugin UI.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@okeytokey/core": "workspace:*",
+    "@okeytokey/schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@okeytokey/eslint-config": "workspace:*",
+    "@okeytokey/tsconfig": "workspace:*",
+    "@okeytokey/vitest-config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.20.0",
+    "react": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@okeytokey/sync",
+  "version": "0.0.0",
+  "description": "Git sync provider abstraction with a GitHub implementation, diagnostics-first.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@okeytokey/core": "workspace:*",
+    "@okeytokey/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@okeytokey/eslint-config": "workspace:*",
+    "@okeytokey/tsconfig": "workspace:*",
+    "@okeytokey/vitest-config": "workspace:*",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.20.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

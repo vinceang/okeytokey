@@ -1,0 +1,4 @@
+{
+  "extends": "@okeytokey/tsconfig/bundler-app.json",
+  "include": ["."]
+}

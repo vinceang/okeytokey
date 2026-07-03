@@ -1,0 +1,16 @@
+{
+  "name": "@okeytokey/vitest-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Vitest configuration for okeytokey packages.",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "peerDependencies": {
+    "vitest": "^3.0.0"
+  }
+}

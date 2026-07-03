@@ -1,0 +1,5 @@
+{
+  "extends": "@okeytokey/tsconfig/library.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src"]
+}

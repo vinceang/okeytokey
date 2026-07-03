@@ -1,0 +1,30 @@
+{
+  "name": "@okeytokey/figma-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "okeytokey Figma plugin: main thread + UI iframe.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit -p src/main/tsconfig.json && tsc --noEmit -p src/ui/tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@okeytokey/core": "workspace:*",
+    "@okeytokey/figma-bridge": "workspace:*",
+    "@okeytokey/schema": "workspace:*",
+    "@okeytokey/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "@okeytokey/eslint-config": "workspace:*",
+    "@okeytokey/tsconfig": "workspace:*",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.20.0",
+    "typescript": "^5.7.0"
+  }
+}
