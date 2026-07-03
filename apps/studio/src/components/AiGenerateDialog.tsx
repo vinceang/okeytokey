@@ -138,8 +138,8 @@ export function AiGenerateDialog({ onClose }: { onClose: () => void }) {
     return (
       <Dialog title="Generate semantic tokens (AI)" onClose={onClose}>
         <p className="ai-privacy" data-testid="ai-generate-no-provider">
-          No AI provider is configured — AI features are off by default, and okeytokey never funds
-          inference. Configure a local server or your own key first.
+          No AI provider is configured — AI features are off by default. Configure a local server or
+          your own key first.
         </p>
         <footer>
           <Button variant="ghost" onClick={onClose}>

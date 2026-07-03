@@ -64,9 +64,7 @@ test("AI provider settings: off by default, presets, connection doctor, persiste
     .getByRole("group", { name: "AI provider" })
     .getByRole("button", { name: "Anthropic" })
     .click();
-  await expect(page.getByTestId("ai-privacy")).toContainText(
-    "billed to your own Anthropic API key",
-  );
+  await expect(page.getByTestId("ai-privacy")).toContainText("your own Anthropic API key");
   await page.getByTestId("ai-anthropic-key").fill("sk-ant-e2e-test");
   await page.getByTestId("ai-test-connection").click();
   await expect(page.getByTestId("ai-connection-result")).toContainText("Claude Opus 4.8");

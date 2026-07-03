@@ -30,7 +30,7 @@ export const OPENAI_COMPATIBLE_PRESETS: readonly ProviderPreset[] = [
     defaultModel: "anthropic/claude-sonnet-4.6",
     requiresApiKey: true,
     local: false,
-    note: "Needs an openrouter.ai account and API key; requests are billed there. No installs — the lowest-friction option if cloud is acceptable.",
+    note: "Needs an openrouter.ai account and API key. No installs — the lowest-friction option if cloud is acceptable.",
   },
   {
     id: "lmstudio",

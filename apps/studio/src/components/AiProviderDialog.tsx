@@ -39,11 +39,11 @@ function privacyNote(settings: AiSettings): string {
         host = settings.baseUrl;
       }
       return local
-        ? `Requests go to ${host} on this machine — token data never leaves it, and nothing is billed.`
-        : `Selected token names and values are sent to ${host} and billed to your own account there. okeytokey never provides or pays for inference.`;
+        ? `Requests go to ${host} on this machine — token data never leaves it.`
+        : `Selected token names and values are sent to ${host} using your own account there.`;
     }
     case "anthropic":
-      return "Selected token names and values are sent to api.anthropic.com and billed to your own Anthropic API key. okeytokey never provides or pays for inference.";
+      return "Selected token names and values are sent to api.anthropic.com using your own Anthropic API key.";
   }
 }
 
