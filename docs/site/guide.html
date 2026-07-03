@@ -331,6 +331,30 @@
       </li>
     </ul>
 
+    <h2 id="ai-generate">9c. Generating semantic tokens with AI</h2>
+    <p>
+      <strong>Generate semantic tokens (AI)…</strong> (⌘K) turns primitives into a reviewed
+      proposal. The flow is fixed: the model proposes, the schema parses, core validates, you see a
+      diff, and only what you approve is applied.
+    </p>
+    <ul>
+      <li>
+        <strong>Scope</strong> is a path like <code>colors</code> or <code>colors.blue</code>
+        (comma-separate several). The dialog states exactly how many tokens will be sent — the
+        selected subtree plus one level of referenced tokens, never the whole document.
+      </li>
+      <li>
+        <strong>Review</strong> lists every proposed operation with a checkbox. Operations that fail
+        core validation are struck through with the reason — they can't be applied. Uncheck anything
+        you don't want; the change count and downstream impact update live.
+      </li>
+      <li>
+        <strong>Apply</strong> lands the accepted operations as one step: a single <kbd>⌘Z</kbd>
+        reverses the whole acceptance. Malformed model output is rejected before anything runs, with
+        the raw text available for inspection.
+      </li>
+    </ul>
+
     <h2 id="figma">10. Figma plugin</h2>
     <p>
       Build with <code>pnpm --filter @okeytokey/figma-plugin build</code>, then in Figma desktop:

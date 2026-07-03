@@ -74,6 +74,12 @@
   font-size: var(--text-sm);
 }
 
+.okey-textarea {
+  resize: vertical;
+  min-height: 4.5em;
+  line-height: 1.45;
+}
+
 .okey-input:focus-visible,
 .okey-select:focus-visible {
   border-color: var(--accent-500);

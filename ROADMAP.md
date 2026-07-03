@@ -30,8 +30,10 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
   connection doctor and explicit local-vs-cloud privacy copy. OpenAI-direct
   stays deferred — its API serves no CORS headers, so a browser app can't call
   it without a proxy.
-- **7.3 First vertical slice** — Generate Semantic Tokens from Primitives, with the
-  proposal review UI (diff, per-op acceptance, undo)
+- ~~7.3 First vertical slice~~ — shipped: Generate Semantic Tokens from
+  Primitives (⌘K), with scope + instruction input, honest context counts,
+  per-operation review with core-validation results, selective acceptance,
+  and single-undo apply via `cmdApplyFix`
 - **7.4 Additional workflows** — dark theme, accessibility, renames, aliases, explain
 - **7.6 Evaluation + polish**
 

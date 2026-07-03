@@ -3,6 +3,7 @@ import type {
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
+  TextareaHTMLAttributes,
 } from "react";
 import { useId } from "react";
 
@@ -35,6 +36,19 @@ export function TextInput({ mono = false, className, ...rest }: TextInputProps) 
 
 export function Select({ className, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select className={`okey-select${className ? ` ${className}` : ""}`} {...rest} />;
+}
+
+export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  mono?: boolean;
+}
+
+export function TextArea({ mono = false, className, ...rest }: TextAreaProps) {
+  return (
+    <textarea
+      className={`okey-input okey-textarea${mono ? " okey-input--mono" : ""}${className ? ` ${className}` : ""}`}
+      {...rest}
+    />
+  );
 }
 
 export interface FieldProps {

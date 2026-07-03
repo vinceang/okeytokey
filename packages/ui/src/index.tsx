@@ -9,10 +9,12 @@ export {
   Field,
   SegmentedControl,
   Select,
+  TextArea,
   TextInput,
   type ButtonProps,
   type FieldProps,
   type SegmentedControlProps,
+  type TextAreaProps,
   type TextInputProps,
 } from "./primitives.js";
 

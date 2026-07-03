@@ -12,6 +12,7 @@ export interface PaletteActions {
   openSync: () => void;
   openScale: () => void;
   openAiSettings: () => void;
+  openAiGenerate: () => void;
 }
 
 /**
@@ -131,6 +132,14 @@ export function CommandPalette({
               }}
             >
               AI provider settings…
+            </Command.Item>
+            <Command.Item
+              data-testid="palette-ai-generate"
+              onSelect={() => {
+                run(actions.openAiGenerate);
+              }}
+            >
+              Generate semantic tokens (AI)…
             </Command.Item>
           </Command.Group>
           <Command.Group heading="Themes">
