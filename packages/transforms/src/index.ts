@@ -1,11 +1,20 @@
 /**
- * @okeytokey/transforms — Style Dictionary v4 export pipeline.
+ * @okeytokey/transforms — export pipeline.
  *
- * Phase 0 scaffold: output targets, theme-aware builds, and the standalone
- * `okeytokey build` CLI land in Phase 4.
+ * `formats.js` is pure and browser-safe (the studio uses it directly);
+ * `build.js` wraps Style Dictionary v4 and is Node-only (CLI/CI).
  */
 
-/** First-party output targets shipped in v1. */
-export const BUILTIN_OUTPUT_TARGETS = ["css", "scss", "ts", "tailwind"] as const;
-
-export type OutputTarget = (typeof BUILTIN_OUTPUT_TARGETS)[number];
+export {
+  BUILTIN_OUTPUT_TARGETS,
+  formatCssLightDark,
+  formatCssVariables,
+  formatScssMap,
+  formatTailwindTheme,
+  formatTokens,
+  formatTsConsts,
+  resolveForExport,
+  type FormatId,
+  type FormatOptions,
+  type ResolvedEntry,
+} from "./formats.js";

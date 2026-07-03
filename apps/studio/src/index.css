@@ -488,6 +488,57 @@ body {
   color: var(--text-secondary);
 }
 
+/* --- Sync dialog --------------------------------------------------------------------- */
+.doctor-report,
+.dry-run,
+.merge-conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.doctor-step {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.doctor-step--failed {
+  color: var(--danger-600);
+}
+
+.doctor-hint {
+  display: block;
+  color: var(--text-tertiary);
+}
+
+.dry-run-change {
+  margin: 0;
+}
+
+.dry-run-change code {
+  font: 400 var(--text-sm) var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.merge-conflict {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.sync-status {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
 /* --- Dialogs ------------------------------------------------------------------------ */
 .dialog-backdrop {
   position: fixed;

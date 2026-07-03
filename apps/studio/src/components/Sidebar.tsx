@@ -6,6 +6,8 @@ import { Button } from "@okeytokey/ui";
 import { cmdAddSet, cmdImportSet, cmdRemoveSet } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
+import { ExportDialog } from "./ExportDialog.js";
+import { SyncDialog } from "./SyncDialog.js";
 import { ThemeDialog } from "./dialogs.js";
 
 function download(filename: string, text: string) {
@@ -28,6 +30,8 @@ export function Sidebar() {
   const setActiveTheme = useUiStore((state) => state.setActiveTheme);
 
   const [editingTheme, setEditingTheme] = useState<Theme>();
+  const [exporting, setExporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [importError, setImportError] = useState<string>();
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -173,6 +177,24 @@ export function Sidebar() {
         >
           Import DTCG JSON…
         </Button>
+        <Button
+          variant="secondary"
+          data-testid="open-export"
+          onClick={() => {
+            setExporting(true);
+          }}
+        >
+          Export CSS/SCSS/TS…
+        </Button>
+        <Button
+          variant="secondary"
+          data-testid="open-sync"
+          onClick={() => {
+            setSyncing(true);
+          }}
+        >
+          Sync with GitHub…
+        </Button>
         <input
           ref={fileInput}
           type="file"
@@ -193,6 +215,20 @@ export function Sidebar() {
           theme={editingTheme}
           onClose={() => {
             setEditingTheme(undefined);
+          }}
+        />
+      )}
+      {exporting && (
+        <ExportDialog
+          onClose={() => {
+            setExporting(false);
+          }}
+        />
+      )}
+      {syncing && (
+        <SyncDialog
+          onClose={() => {
+            setSyncing(false);
           }}
         />
       )}

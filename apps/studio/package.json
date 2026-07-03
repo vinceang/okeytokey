@@ -16,6 +16,8 @@
   "dependencies": {
     "@okeytokey/core": "workspace:*",
     "@okeytokey/schema": "workspace:*",
+    "@okeytokey/sync": "workspace:*",
+    "@okeytokey/transforms": "workspace:*",
     "@okeytokey/ui": "workspace:*",
     "@tanstack/react-virtual": "^3.14.5",
     "dexie": "^4.4.4",

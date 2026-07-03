@@ -9,7 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./build": {
+      "types": "./dist/build.d.ts",
+      "import": "./dist/build.js"
     }
+  },
+  "bin": {
+    "okeytokey": "./dist/cli.js"
   },
   "files": [
     "dist"
@@ -22,12 +29,14 @@
   },
   "dependencies": {
     "@okeytokey/core": "workspace:*",
-    "@okeytokey/schema": "workspace:*"
+    "@okeytokey/schema": "workspace:*",
+    "style-dictionary": "^5.5.0"
   },
   "devDependencies": {
     "@okeytokey/eslint-config": "workspace:*",
     "@okeytokey/tsconfig": "workspace:*",
     "@okeytokey/vitest-config": "workspace:*",
+    "@types/node": "^26.1.0",
     "@vitest/coverage-v8": "^3.0.0",
     "eslint": "^9.20.0",
     "typescript": "^5.7.0",

@@ -10,7 +10,5 @@ numbered, with Status / Context / Decision / Consequences sections.
   (Phase 1)
 - [0003 — Undo model](0003-undo-model.md): command pattern with
   structural-snapshot inverses over the immutable document (Phase 2)
-
-Planned:
-
-- `0004-sync-merge-strategy.md` — local-first storage + three-way semantic merge (Phase 4)
+- [0004 — Sync and merge strategy](0004-sync-merge-strategy.md): traced operations,
+  connection doctor, atomic Git Data API writes, token-level three-way merge (Phase 4)
