@@ -40,22 +40,15 @@ describe("suggestColors", () => {
     expect(scaleFit?.value).not.toBe("#3b82f6");
   });
 
-  it("suggests hues from the palette's largest gaps, deterministically", () => {
-    const first = suggestColors(doc(), "global", "colors.brand");
-    const second = suggestColors(doc(), "global", "colors.brand");
-    expect(first).toEqual(second);
-    const hueSuggestion = first.find((entry) => entry.reason.includes("hue"));
-    expect(hueSuggestion).toBeDefined();
-    expect(hueSuggestion?.value).toMatch(/^#[0-9a-f]{6}$/);
-    // Never suggests a color the set already holds.
-    expect(first.map((entry) => entry.value)).not.toContain("#3b82f6");
-    expect(first.map((entry) => entry.value)).not.toContain("#ef4444");
+  it("offers no arbitrary hue for a fresh group — only computable scale fits", () => {
+    // A new brand color is a design decision, not a computation.
+    expect(suggestColors(doc(), "global", "colors.brand")).toEqual([]);
+    expect(suggestColors(doc(), "global", "colors.brand.500")).toEqual([]);
   });
 
-  it("returns nothing for unknown sets and no scale-fit for non-numeric paths", () => {
+  it("returns nothing for unknown sets and non-numeric paths", () => {
     expect(suggestColors(doc(), "nope", "colors.x")).toEqual([]);
-    const nonNumeric = suggestColors(doc(), "global", "colors.brand");
-    expect(nonNumeric.every((entry) => !entry.reason.includes("scale"))).toBe(true);
+    expect(suggestColors(doc(), "global", "colors.brand")).toEqual([]);
   });
 });
 

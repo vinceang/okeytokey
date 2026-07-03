@@ -1,6 +1,3 @@
-import { clampChroma, converter, formatHex } from "culori";
-
-import { isColor, parseColor } from "../color/color.js";
 import type { TokenDocument, TokenSet } from "../parser/document.js";
 import { parseQuantity, formatQuantity } from "../resolver/expression.js";
 import { planColorScale } from "./scale.js";
@@ -9,48 +6,14 @@ import { planColorScale } from "./scale.js";
  * Deterministic value suggestions for token creation ("if it can be
  * computed, compute it" — ADR 0006). Everything here derives from what is
  * already in the document: scale positions come from the group's anchors,
- * new hues from the gaps in the set's existing palette, quantity steps
- * from the group's progression. Same document, same suggestions.
+ * quantity steps from the group's progression. Same document, same
+ * suggestions.
  */
-
-const toOklch = converter("oklch");
 
 export interface ValueSuggestion {
   readonly value: string;
   /** Why this value, in user-facing words. */
   readonly reason: string;
-}
-
-/** Chroma below this reads as neutral — excluded from hue-gap analysis. */
-const NEUTRAL_CHROMA = 0.05;
-
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  const low = sorted[mid - 1];
-  const high = sorted[mid];
-  if (sorted.length % 2 === 0 && low !== undefined && high !== undefined) {
-    return (low + high) / 2;
-  }
-  return sorted[mid] ?? 0;
-}
-
-/** Every concrete color literal in the set, as OKLCH. */
-function paletteOf(set: TokenSet) {
-  const colors: { l: number; c: number; h: number; hex: string }[] = [];
-  for (const token of set.tokens.values()) {
-    if (token.type !== "color") continue;
-    const raw = token.value;
-    if (typeof raw !== "string" || !isColor(raw)) continue;
-    const oklch = toOklch(parseColor(raw).color);
-    colors.push({
-      l: oklch.l,
-      c: oklch.c,
-      h: oklch.h ?? 0,
-      hex: formatHex(parseColor(raw).color),
-    });
-  }
-  return colors;
 }
 
 /**
@@ -80,54 +43,19 @@ function scaleFitSuggestion(
 }
 
 /**
- * Suggest hues the palette does not have: midpoints of the largest gaps on
- * the hue wheel, rendered at the palette's median lightness and chroma.
+ * Deterministic color suggestions for creating `path` in `setName`. Only
+ * scale-fit values are offered — a color that completes an existing ramp is
+ * computable; inventing an arbitrary new brand hue is a design decision, not
+ * a computation, so we don't suggest one.
  */
-function hueGapSuggestions(set: TokenSet, count: number): ValueSuggestion[] {
-  const chromatic = paletteOf(set).filter((color) => color.c >= NEUTRAL_CHROMA);
-  if (chromatic.length === 0) return [];
-
-  const hues = [...new Set(chromatic.map((color) => Math.round(color.h)))].sort((a, b) => a - b);
-  const l = median(chromatic.map((color) => color.l));
-  const c = median(chromatic.map((color) => color.c));
-
-  // Circular gaps between neighboring hues (single hue: the whole wheel).
-  const gaps = hues.map((hue, index) => {
-    const next = hues[(index + 1) % hues.length] ?? hue;
-    const size = index === hues.length - 1 ? 360 - hue + next : next - hue;
-    return { from: hue, size };
-  });
-  gaps.sort((a, b) => b.size - a.size);
-
-  const existing = new Set(paletteOf(set).map((color) => color.hex));
-  const suggestions: ValueSuggestion[] = [];
-  for (const gap of gaps.slice(0, count)) {
-    if (gap.size < 60) continue; // palette already covers the wheel densely
-    const hue = (gap.from + gap.size / 2) % 360;
-    const fitted = clampChroma({ mode: "oklch", l, c, h: hue }, "oklch");
-    const hex = formatHex(fitted);
-    if (existing.has(hex)) continue;
-    suggestions.push({
-      value: hex,
-      reason: `a hue this set doesn't use yet (~${String(Math.round(hue))}°)`,
-    });
-  }
-  return suggestions;
-}
-
-/** Deterministic color suggestions for creating `path` in `setName`. */
 export function suggestColors(
   document: TokenDocument,
   setName: string,
   path: string,
 ): ValueSuggestion[] {
-  const set = document.sets.get(setName);
-  if (!set) return [];
-  const suggestions: ValueSuggestion[] = [];
+  if (!document.sets.has(setName)) return [];
   const scaleFit = scaleFitSuggestion(document, setName, path);
-  if (scaleFit) suggestions.push(scaleFit);
-  suggestions.push(...hueGapSuggestions(set, scaleFit ? 2 : 3));
-  return suggestions;
+  return scaleFit ? [scaleFit] : [];
 }
 
 /**
