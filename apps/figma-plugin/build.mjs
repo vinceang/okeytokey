@@ -22,19 +22,25 @@ const ui = await build({
   entryPoints: ["src/ui/main.tsx"],
   bundle: true,
   write: false,
+  outdir: "dist",
   format: "iife",
   target: "es2020",
   jsx: "automatic",
   define: { "process.env.NODE_ENV": '"production"' },
 });
 
-const [bundle] = ui.outputFiles;
-if (!bundle) {
+const jsBundle = ui.outputFiles.find((file) => file.path.endsWith(".js"));
+const cssBundle = ui.outputFiles.find((file) => file.path.endsWith(".css"));
+if (!jsBundle) {
   throw new Error("esbuild produced no UI bundle output");
 }
 // Guard against the bundle terminating the inline <script> tag early.
-const js = bundle.text.replaceAll("</script>", "<\\/script>");
+const js = jsBundle.text.replaceAll("</script>", "<\\/script>");
+const css = cssBundle ? `<style>${cssBundle.text}</style>` : "";
 const template = await readFile("src/ui/ui.html", "utf8");
-await writeFile("dist/ui.html", template.replace("<!--APP_SCRIPT-->", `<script>${js}</script>`));
+await writeFile(
+  "dist/ui.html",
+  template.replace("<!--APP_SCRIPT-->", `${css}<script>${js}</script>`),
+);
 
 console.log("figma-plugin: dist/code.js + dist/ui.html written");

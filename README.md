@@ -30,8 +30,8 @@ violations and circular dependencies fail CI.
 | 2 — Studio editor (CRUD, undo, persistence)  | ✅ Done (ADR 0003)        |
 | 3 — Validation, diff, refactor               | ✅ Done                   |
 | 4 — Sync + transforms                        | ✅ Done (ADR 0004)        |
-| 5 — Figma plugin                             | Next                      |
-| 6 — Polish (onboarding, palette, a11y, perf) | Planned                   |
+| 5 — Figma plugin                             | ✅ Done                   |
+| 6 — Polish (onboarding, palette, a11y, perf) | Next                      |
 
 Run the editor: `pnpm install && pnpm build && pnpm --filter @okeytokey/studio dev`,
 then open http://localhost:5173. First run seeds a small primitive → semantic starter

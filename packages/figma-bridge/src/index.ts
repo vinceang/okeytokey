@@ -1,10 +1,39 @@
 /**
- * @okeytokey/figma-bridge — Figma node/variable mapping and the typed
- * postMessage protocol between the plugin main thread and its UI iframe.
- *
- * Phase 0 scaffold: the discriminated-union message schema (Zod-validated on
- * both sides), node application, and variable import/export land in Phase 5.
+ * @okeytokey/figma-bridge — pure Figma integration logic shared by the
+ * plugin's main thread and UI iframe. No `figma` globals, no DOM.
  */
 
-/** Bumped on breaking changes to the main-thread <-> UI message protocol. */
-export const BRIDGE_PROTOCOL_VERSION = 1;
+export {
+  BRIDGE_PROTOCOL_VERSION,
+  applyTargetSchema,
+  mainToUiSchema,
+  mappingReportSchema,
+  parseMainToUi,
+  parseUiToMain,
+  themeSchema,
+  uiToMainSchema,
+  type ApplyTarget,
+  type MainToUi,
+  type MappingReport,
+  type UiToMain,
+} from "./protocol.js";
+
+export {
+  ApplyError,
+  cssToFigmaColor,
+  dimensionToPx,
+  fontWeightToStyle,
+  planApply,
+  type ApplyAction,
+  type FigmaRGBA,
+} from "./apply.js";
+
+export {
+  importVariables,
+  planVariableExport,
+  type VariableDump,
+  type VariableExportPlan,
+  type VariableImportResult,
+  type VariablePlanEntry,
+  type VariableValue,
+} from "./variables.js";

@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@okeytokey/core": "workspace:*",
-    "@okeytokey/schema": "workspace:*"
+    "@okeytokey/schema": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@okeytokey/eslint-config": "workspace:*",
