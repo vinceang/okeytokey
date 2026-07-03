@@ -60,3 +60,45 @@ test("a single anchor synthesizes a full ramp with derived endpoints", async ({ 
   await expect(page.getByTestId("token-brand.seed.50")).toBeVisible();
   await expect(page.getByTestId("token-brand.seed.950")).toBeVisible();
 });
+
+test("a flat color token becomes a scale seed: rename + ramp, references follow, one undo", async ({
+  page,
+}) => {
+  await page.goto("/");
+  // The user's real workflow: create a single red, then ask for a scale.
+  await page.getByTestId("new-token").click();
+  await page.getByTestId("new-token-path").fill("colors.red");
+  await page.getByTestId("new-token-value").fill("#ff0000");
+  await page.getByTestId("create-token").click();
+
+  // With red selected, the dialog prefills red itself and explains the plan.
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByTestId("palette-scale").click();
+  await expect(page.getByTestId("scale-group-input")).toHaveValue("colors.red");
+  await expect(page.getByTestId("scale-seed-note")).toContainText("single color");
+  await expect(page.getByTestId("scale-seed-note")).toContainText("colors.red.500");
+  await expect(page.getByTestId("scale-preview")).toContainText("seed");
+  await page.getByTestId("scale-apply").click();
+
+  // The flat token became a full ramp with the seed preserved at 500.
+  await page.getByTestId("token-colors.red.500").click();
+  await expect(page.getByTestId("color-input")).toHaveValue("#ff0000");
+  await expect(page.getByTestId("token-colors.red.900")).toBeVisible();
+
+  // One undo restores the flat token and removes the ramp.
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("token-colors.red")).toBeVisible();
+  await expect(page.getByTestId("token-colors.red.500")).toHaveCount(0);
+});
+
+test("pointing at a group without numeric anchors explains the two valid shapes", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByTestId("filter-input")).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByTestId("palette-scale").click();
+  await page.getByTestId("scale-group-input").fill("colors");
+  await expect(page.getByTestId("scale-hint")).toContainText("numbered steps");
+  await expect(page.getByTestId("scale-hint")).toContainText("single color token");
+});

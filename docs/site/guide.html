@@ -210,15 +210,28 @@
     <h2 id="scales">4b. Generating color scales</h2>
     <p>
       Open <strong>Generate scale steps…</strong> from the command palette (<kbd>⌘K</kbd>) and point
-      it at a group with numeric color anchors. With several anchors
-      (<code>blue.100/500/900</code>), the missing steps between them are interpolated. With just
-      <em>one</em> anchor, a full ramp is synthesized from near-white to near-dark around it,
-      keeping its hue — the derived endpoints are shown in the dialog, and the optional
-      <em>lightest/darkest end</em> fields let you set the range yourself (they also unlock steps
-      like 50/950 beyond your outermost anchors). Review the preview — anchors are marked and never
-      touched — then apply. Everything is OKLCH-interpolated, fully deterministic (same inputs, same
-      results, no AI), one undo removes the whole batch, and generated tokens carry
-      <code>lineage</code> metadata recording the generator and its anchor inputs.
+      it at either shape:
+    </p>
+    <ul>
+      <li>
+        <strong>A single color token</strong> (<code>colors.red</code>) — the everyday case: you
+        made one color and want its scale. The token becomes a seed step (<code>red.500</code> by
+        default, configurable) — every alias and expression referencing it follows automatically —
+        and a full ramp from near-white to near-dark is synthesized around it, keeping its hue. With
+        a token selected, the dialog prefills this for you.
+      </li>
+      <li>
+        <strong>A group with numeric anchors</strong> (<code>blue.100/500/900</code>) — the missing
+        steps between anchors are interpolated; anchors are marked in the preview and never touched.
+        The optional <em>lightest/darkest end</em> fields set the range yourself and unlock steps
+        like 50/950 beyond your outermost anchors.
+      </li>
+    </ul>
+    <p>
+      Review the preview, then apply. Everything is OKLCH-interpolated, fully deterministic (same
+      inputs, same results, no AI), one undo removes the whole batch — including the seed rename —
+      and generated tokens carry <code>lineage</code> metadata recording the generator and its
+      anchor inputs.
     </p>
 
     <h2 id="themes">5. Themes and theme groups</h2>

@@ -122,9 +122,11 @@ export {
   DEFAULT_SCALE_STEPS,
   SCALE_GENERATOR_ID,
   planColorScale,
+  planColorScaleFromSeed,
   type ScaleEntry,
   type ScaleOptions,
   type ScalePlan,
+  type SeedScalePlan,
 } from "./generate/scale.js";
 
 export { suggestColors, suggestQuantitySteps, type ValueSuggestion } from "./generate/suggest.js";

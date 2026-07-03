@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { TokenParseError } from "../errors.js";
 import { createTokenDocument, parseTokenSet } from "../parser/document.js";
 import { wcagContrast } from "../color/contrast.js";
-import { DEFAULT_SCALE_STEPS, planColorScale } from "./scale.js";
+import { DEFAULT_SCALE_STEPS, planColorScale, planColorScaleFromSeed } from "./scale.js";
 
 const doc = (json: string) => createTokenDocument([parseTokenSet("global", json)]);
 
@@ -203,5 +203,49 @@ describe("planColorScale", () => {
   it("exports sensible default steps", () => {
     expect(DEFAULT_SCALE_STEPS).toContain(50);
     expect(DEFAULT_SCALE_STEPS).toContain(950);
+  });
+});
+
+describe("planColorScaleFromSeed", () => {
+  const SEED = `{
+  "colors": {
+    "$type": "color",
+    "red": { "$value": "#ff0000" }
+  },
+  "semantic": {
+    "$type": "color",
+    "danger": { "$value": "{colors.red}" },
+    "dangerHover": { "$value": "darken({colors.red}, 0.1)" }
+  }
+}`;
+
+  it("renames the seed to its step, fills the ramp, and retargets references", () => {
+    const plan = planColorScaleFromSeed(doc(SEED), "global", "colors.red");
+    expect(plan.seedStep).toBe(500);
+    expect(plan.referenceEdits).toBe(2); // the alias and the color function
+    expect(plan.scale.anchors.map((anchor) => anchor.path)).toEqual(["colors.red.500"]);
+    expect(plan.scale.generated.length).toBeGreaterThan(5);
+
+    const next = plan.apply();
+    const tokens = next.sets.get("global")?.tokens;
+    expect(tokens?.has("colors.red")).toBe(false); // flat token became the group
+    expect(tokens?.get("colors.red.500")?.value).toBe("#ff0000"); // seed preserved
+    expect(tokens?.get("semantic.danger")?.value).toBe("{colors.red.500}");
+    expect(String(tokens?.get("semantic.dangerHover")?.value)).toContain("{colors.red.500}");
+    // Generated steps land sorted around the seed.
+    expect(tokens?.has("colors.red.100")).toBe(true);
+    expect(tokens?.has("colors.red.900")).toBe(true);
+  });
+
+  it("honors a custom seed step and rejects non-seeds with plain reasons", () => {
+    const custom = planColorScaleFromSeed(doc(SEED), "global", "colors.red", { seedStep: 600 });
+    expect(custom.apply().sets.get("global")?.tokens.get("colors.red.600")?.value).toBe("#ff0000");
+
+    expect(() => planColorScaleFromSeed(doc(SEED), "global", "colors.nope")).toThrow(
+      TokenParseError,
+    );
+    expect(() => planColorScaleFromSeed(doc(ANCHORS), "global", "colors.blue.500")).toThrow(
+      /already looks like a scale step/,
+    );
   });
 });

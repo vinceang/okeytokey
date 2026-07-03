@@ -13,6 +13,7 @@ import {
 } from "../parser/document.js";
 import type { JsonMap, JsonValue } from "../ordered-json/ordered-json.js";
 import { createResolver } from "../resolver/resolver.js";
+import { planRename } from "../refactor/refactor.js";
 
 /**
  * Deterministic color Scale Generator (Phase 7.0 — see ADR 0006 and
@@ -291,5 +292,75 @@ export function planColorScale(
         : undefined,
     excludedAnchors: excluded,
     apply,
+  };
+}
+
+export interface SeedScalePlan {
+  /** The flat color token the scale grows from, e.g. "colors.red". */
+  readonly seedPath: string;
+  /** The step the seed becomes, e.g. 500 → "colors.red.500". */
+  readonly seedStep: number;
+  /** References that will be retargeted by the rename. */
+  readonly referenceEdits: number;
+  /** The scale as planned against the post-rename document. */
+  readonly scale: ScalePlan;
+  /** Apply rename + generation, returning the new document. */
+  readonly apply: () => TokenDocument;
+}
+
+/**
+ * Plan a scale around a single flat color token ("I made `red`, give me a
+ * red scale"). DTCG forbids a token that is also a group, so the seed is
+ * renamed to `seed.{seedStep}` first — the rename-refactor retargets every
+ * reference — and the single-anchor synthesis then fills the ramp around it.
+ * One plan, one apply, one undo.
+ */
+export function planColorScaleFromSeed(
+  document: TokenDocument,
+  setName: string,
+  seedPath: string,
+  options: ScaleOptions & { seedStep?: number } = {},
+): SeedScalePlan {
+  const set = document.sets.get(setName);
+  if (!set) {
+    fail(setName, "", "Set does not exist");
+  }
+  const token = set.tokens.get(seedPath);
+  if (!token) {
+    fail(setName, seedPath, `"${seedPath}" is not a token in this set`);
+  }
+  if (token.type !== "color") {
+    fail(setName, seedPath, `"${seedPath}" is a ${token.type} token, not a color`);
+  }
+  const lastSegment = seedPath.slice(seedPath.lastIndexOf(".") + 1);
+  if (/^\d+$/.test(lastSegment)) {
+    fail(
+      setName,
+      seedPath,
+      `"${seedPath}" already looks like a scale step — point the generator at its group instead`,
+    );
+  }
+  const seedStep = options.seedStep ?? 500;
+
+  // A token cannot be renamed directly into its own child path (the target
+  // validates against the pre-rename document, where the seed is still a
+  // token). Hop through a temporary sibling: red -> red__seed -> red.500.
+  // Both hops live inside this plan's apply, so callers see one operation.
+  const tempPath = `${seedPath}__seed`;
+  if (set.tokens.has(tempPath)) {
+    fail(setName, tempPath, `"${tempPath}" already exists`);
+  }
+  const hop = planRename(document, seedPath, tempPath);
+  const rename = planRename(hop.apply(), tempPath, `${seedPath}.${String(seedStep)}`);
+  const renamed = rename.apply();
+  const scale = planColorScale(renamed, setName, seedPath, options);
+
+  return {
+    seedPath,
+    seedStep,
+    referenceEdits: rename.referenceEdits.length,
+    scale,
+    // scale closed over the post-rename document, so this applies both.
+    apply: () => scale.apply(),
   };
 }
