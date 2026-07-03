@@ -35,6 +35,22 @@ export {
 } from "./parser/document.js";
 
 export {
+  TokenMutationError,
+  addSet,
+  createToken,
+  deleteToken,
+  emptySet,
+  removeSet,
+  renameSet,
+  setGroupMeta,
+  setTokenMeta,
+  setTokenValue,
+  withSet,
+  type TokenInit,
+  type TokenMetaPatch,
+} from "./mutate/mutate.js";
+
+export {
   evaluateExpression,
   formatQuantity,
   isExpression,

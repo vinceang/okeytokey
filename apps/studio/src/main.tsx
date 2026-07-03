@@ -2,6 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App.js";
+import "@okeytokey/ui/tokens.css";
+import "@okeytokey/ui/components.css";
 import "./index.css";
 
 const container = document.getElementById("root");

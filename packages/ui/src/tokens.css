@@ -1,0 +1,106 @@
+/*
+ * okeytokey design system. Constrained scales only — every component draws
+ * from these variables; no ad-hoc values in component CSS.
+ *
+ * Spacing: 4 8 12 16 24 32 48 (geometric-ish ramp, distinguishable steps)
+ * Type:    11 12 13 14 16 20  (dense tool scale; hierarchy via weight+color)
+ * Weights: 400 / 500 / 600
+ * Grays:   slightly cool (210 hue) so the surface doesn't feel sterile
+ * Accent:  one blue, used sparingly (primary actions, focus, selection)
+ */
+
+:root {
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Type */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Cool gray ramp */
+  --gray-25: hsl(210 30% 98.5%);
+  --gray-50: hsl(210 25% 97%);
+  --gray-100: hsl(210 20% 94%);
+  --gray-200: hsl(210 16% 88%);
+  --gray-300: hsl(210 14% 78%);
+  --gray-400: hsl(210 12% 62%);
+  --gray-500: hsl(210 10% 46%);
+  --gray-600: hsl(210 12% 36%);
+  --gray-700: hsl(211 15% 26%);
+  --gray-800: hsl(212 20% 16%);
+  --gray-900: hsl(213 25% 10%);
+
+  /* Accent (blue) */
+  --accent-50: hsl(217 90% 96%);
+  --accent-100: hsl(217 88% 92%);
+  --accent-300: hsl(217 85% 72%);
+  --accent-500: hsl(217 85% 55%);
+  --accent-600: hsl(220 80% 48%);
+  --accent-700: hsl(222 75% 40%);
+
+  /* Semantic status */
+  --danger-500: hsl(0 72% 51%);
+  --danger-600: hsl(0 70% 42%);
+  --warning-500: hsl(38 92% 45%);
+  --warning-bg: hsl(45 95% 94%);
+  --success-500: hsl(152 60% 36%);
+
+  /* Surfaces (light) */
+  --surface-app: var(--gray-25);
+  --surface-panel: #ffffff;
+  --surface-sunken: var(--gray-50);
+  --surface-hover: var(--gray-100);
+  --surface-selected: var(--accent-50);
+
+  /* Text */
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary: var(--gray-400);
+  --text-on-accent: #ffffff;
+
+  /* Lines — used sparingly; prefer surface shifts */
+  --line-subtle: var(--gray-100);
+  --line-strong: var(--gray-200);
+
+  /* Elevation */
+  --shadow-raised: 0 1px 2px hsl(213 25% 10% / 0.06);
+  --shadow-overlay: 0 4px 16px hsl(213 25% 10% / 0.12), 0 1px 3px hsl(213 25% 10% / 0.08);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --focus-ring: 0 0 0 2px var(--surface-panel), 0 0 0 4px var(--accent-500);
+}
+
+/* Base element defaults for okeytokey apps */
+.okey-app {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--surface-app);
+  font-variant-numeric: tabular-nums;
+}
+
+.okey-app *:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+.okey-app ::placeholder {
+  color: var(--text-tertiary);
+}

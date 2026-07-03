@@ -50,6 +50,15 @@ culori-backed. `parseColor` / `formatColor` (hex, rgb, hsl, oklch, oklab, displa
 resolver-level `lighten(…)` / `darken(…)` / `alpha(…)` / `mix(…)` expressions
 (nesting supported).
 
+### `mutate/`
+
+Persistent (immutable) mutations — every function returns a new `TokenSet` /
+`TokenDocument` with structural sharing, and re-runs validation so a mutation can
+never produce an invalid set: `createToken`, `setTokenValue`, `setTokenMeta`
+(description/deprecated/okeytokey extension), `setGroupMeta`, `deleteToken` (prunes
+emptied groups), `withSet`, `addSet`, `removeSet`, `renameSet`, `emptySet`. Failures
+throw `TokenMutationError`.
+
 ### `themes/`
 
 Theme = ordered `(set, status)` list; `source` resolves but doesn't emit, `enabled`

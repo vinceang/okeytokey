@@ -9,13 +9,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./components.css": "./dist/components.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && cp src/tokens.css src/components.css dist/",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run"

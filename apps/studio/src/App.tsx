@@ -1,66 +1,143 @@
-import { createResolver, createTokenDocument, parseTokenSet } from "@okeytokey/core";
-import { DTCG_TOKEN_TYPES } from "@okeytokey/schema";
-import { TokenTypeLabel } from "@okeytokey/ui";
+import { useEffect, useState } from "react";
 
-/**
- * Phase 1 shell. Parses and resolves a demo token set through the real core
- * engine (schema -> core -> ui chain); the full editor arrives in Phase 2.
- */
+import { Button, TextInput } from "@okeytokey/ui";
 
-const DEMO_SET = `{
-  "colors": {
-    "$type": "color",
-    "blue": { "$value": "#3b82f6" },
-    "primary": { "$value": "{colors.blue}" }
-  },
-  "spacing": {
-    "$type": "dimension",
-    "base": { "$value": "4px" },
-    "double": { "$value": "{spacing.base} * 2" }
-  }
-}`;
-
-const resolver = createResolver(createTokenDocument([parseTokenSet("demo", DEMO_SET)]));
-const resolved = resolver.resolveAll();
+import { Inspector } from "./components/Inspector.js";
+import { Sidebar } from "./components/Sidebar.js";
+import { TokenList } from "./components/TokenList.js";
+import { NewTokenDialog } from "./components/dialogs.js";
+import { useResolver } from "./hooks/use-resolver.js";
+import { useDocumentStore } from "./state/document-store.js";
+import { createStorage, initPersistence } from "./state/persistence.js";
+import { useUiStore } from "./state/ui-store.js";
 
 export function App() {
+  const hydrated = useDocumentStore((state) => state.hydrated);
+  const document = useDocumentStore((state) => state.document);
+  const undo = useDocumentStore((state) => state.undo);
+  const redo = useDocumentStore((state) => state.redo);
+  const canUndo = useDocumentStore((state) => state.past.length > 0);
+  const canRedo = useDocumentStore((state) => state.future.length > 0);
+
+  const activeSet = useUiStore((state) => state.activeSet);
+  const setActiveSet = useUiStore((state) => state.setActiveSet);
+  const selection = useUiStore((state) => state.selection);
+  const filter = useUiStore((state) => state.filter);
+  const setFilter = useUiStore((state) => state.setFilter);
+
+  const [creating, setCreating] = useState(false);
+  const resolver = useResolver();
+
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    void initPersistence(createStorage()).then((cleanup) => {
+      stop = cleanup;
+    });
+    return () => stop?.();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "z") return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      event.preventDefault();
+      if (event.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [undo, redo]);
+
+  // Default the active set to the first one once hydrated (or after deletes).
+  const firstSet = document.sets.keys().next().value;
+  useEffect(() => {
+    if (hydrated && (activeSet === undefined || !document.sets.has(activeSet))) {
+      setActiveSet(firstSet);
+    }
+  }, [hydrated, activeSet, document, firstSet, setActiveSet]);
+
+  if (!hydrated) {
+    return (
+      <div className="okey-app studio">
+        <p className="empty-state">Loading…</p>
+      </div>
+    );
+  }
+
+  const currentSet = activeSet ? document.sets.get(activeSet) : undefined;
+
   return (
-    <main className="shell">
-      <h1>okeytokey</h1>
-      <p className="tagline">Design tokens, decided.</p>
-      <p data-testid="token-type-count">{DTCG_TOKEN_TYPES.length} token types supported</p>
-      <ul className="token-types">
-        {DTCG_TOKEN_TYPES.map((type) => (
-          <li key={type}>
-            <TokenTypeLabel type={type} />
-          </li>
-        ))}
-      </ul>
-      <h2>Live resolver demo</h2>
-      <table className="demo-tokens" data-testid="resolved-tokens">
-        <thead>
-          <tr>
-            <th>Token</th>
-            <th>Raw value</th>
-            <th>Resolved</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...resolved.resolved.entries()].map(([path, token]) => (
-            <tr key={path}>
-              <td>
-                <code>{path}</code>
-              </td>
-              <td>
-                <code>{String(token.token.value)}</code>
-              </td>
-              <td data-testid={`resolved-${path}`}>
-                <code>{String(token.value)}</code>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+    <div className="okey-app studio">
+      <Sidebar />
+      <main className="studio-main">
+        <div className="studio-toolbar">
+          <TextInput
+            type="search"
+            placeholder="Filter tokens (name or value)…"
+            aria-label="Filter tokens"
+            data-testid="filter-input"
+            value={filter}
+            onChange={(event) => {
+              setFilter(event.target.value);
+            }}
+          />
+          <span className="spacer" />
+          <Button
+            variant="ghost"
+            disabled={!canUndo}
+            onClick={() => undo()}
+            title="Undo (⌘Z)"
+            data-testid="undo"
+          >
+            ↩ Undo
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={!canRedo}
+            onClick={() => redo()}
+            title="Redo (⇧⌘Z)"
+            data-testid="redo"
+          >
+            ↪ Redo
+          </Button>
+          <Button
+            variant="primary"
+            disabled={currentSet === undefined}
+            onClick={() => {
+              setCreating(true);
+            }}
+            data-testid="new-token"
+          >
+            New token
+          </Button>
+        </div>
+        {currentSet ? (
+          <TokenList set={currentSet} resolver={resolver} />
+        ) : (
+          <div className="empty-state">
+            <h3>No set selected</h3>
+            <p>Create a token set in the sidebar to get started.</p>
+          </div>
+        )}
+      </main>
+      {selection ? (
+        <Inspector selection={selection} resolver={resolver} />
+      ) : (
+        <aside className="studio-inspector">
+          <p className="empty-state">Select a token to inspect and edit it.</p>
+        </aside>
+      )}
+      {creating && currentSet && (
+        <NewTokenDialog
+          setName={currentSet.name}
+          onClose={() => {
+            setCreating(false);
+          }}
+        />
+      )}
+    </div>
   );
 }

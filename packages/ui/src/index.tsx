@@ -1,17 +1,28 @@
 /**
- * @okeytokey/ui — shared presentational components.
- *
- * Phase 0 scaffold: TokenRow, TokenTypeIcon, ColorSwatch, ReferencePill,
- * DiffViewer, DiagnosticsPanel, ContrastBadge and friends land in Phase 2+.
+ * @okeytokey/ui — shared presentational components. No app state, no data
+ * fetching; containers live in the apps. Styles ship as plain CSS:
+ * import "@okeytokey/ui/tokens.css" and "@okeytokey/ui/components.css".
  */
 
-import type { DtcgTokenType } from "@okeytokey/schema";
+export {
+  Button,
+  Field,
+  SegmentedControl,
+  Select,
+  TextInput,
+  type ButtonProps,
+  type FieldProps,
+  type SegmentedControlProps,
+  type TextInputProps,
+} from "./primitives.js";
 
-export interface TokenTypeLabelProps {
-  type: DtcgTokenType;
-}
-
-/** Placeholder component proving the JSX build + schema dependency wiring. */
-export function TokenTypeLabel({ type }: TokenTypeLabelProps) {
-  return <span data-token-type={type}>{type}</span>;
-}
+export {
+  ColorSwatch,
+  ReferencePill,
+  TokenRow,
+  TokenTypeIcon,
+  type ColorSwatchProps,
+  type ReferencePillProps,
+  type TokenRowProps,
+  type TokenTypeIconProps,
+} from "./token-components.js";

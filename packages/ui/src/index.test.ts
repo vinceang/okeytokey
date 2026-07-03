@@ -1,9 +1,31 @@
 import { describe, expect, it } from "vitest";
 
-import { TokenTypeLabel } from "./index.js";
+import {
+  Button,
+  ColorSwatch,
+  Field,
+  ReferencePill,
+  SegmentedControl,
+  Select,
+  TextInput,
+  TokenRow,
+  TokenTypeIcon,
+} from "./index.js";
 
-describe("TokenTypeLabel", () => {
-  it("is a function component", () => {
-    expect(typeof TokenTypeLabel).toBe("function");
+describe("component exports", () => {
+  it("every component is a function component", () => {
+    for (const component of [
+      Button,
+      ColorSwatch,
+      Field,
+      ReferencePill,
+      SegmentedControl,
+      Select,
+      TextInput,
+      TokenRow,
+      TokenTypeIcon,
+    ]) {
+      expect(typeof component).toBe("function");
+    }
   });
 });

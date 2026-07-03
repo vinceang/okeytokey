@@ -1,0 +1,270 @@
+/* @okeytokey/ui component styles. Draws exclusively from tokens.css vars. */
+
+/* --- Button ------------------------------------------------------------ */
+.okey-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font: 500 var(--text-md) var(--font-sans);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.okey-button--primary {
+  background: var(--accent-600);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-raised);
+}
+.okey-button--primary:hover {
+  background: var(--accent-700);
+}
+
+.okey-button--secondary {
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  box-shadow:
+    inset 0 0 0 1px var(--line-strong),
+    var(--shadow-raised);
+}
+.okey-button--secondary:hover {
+  background: var(--surface-sunken);
+}
+
+.okey-button--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.okey-button--ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.okey-button--danger {
+  background: transparent;
+  color: var(--danger-600);
+}
+.okey-button--danger:hover {
+  background: hsl(0 72% 51% / 0.08);
+}
+
+.okey-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* --- Inputs ------------------------------------------------------------ */
+.okey-input,
+.okey-select {
+  width: 100%;
+  padding: 6px var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+  font: 400 var(--text-md) var(--font-sans);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 2px hsl(213 25% 10% / 0.04);
+}
+
+.okey-input--mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.okey-input:focus-visible,
+.okey-select:focus-visible {
+  border-color: var(--accent-500);
+  box-shadow: 0 0 0 3px var(--accent-100);
+}
+
+.okey-input[aria-invalid="true"] {
+  border-color: var(--danger-500);
+}
+
+.okey-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.okey-field > label {
+  font: 500 var(--text-xs) var(--font-sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.okey-field-error {
+  font-size: var(--text-sm);
+  color: var(--danger-600);
+}
+
+/* --- Segmented control -------------------------------------------------- */
+.okey-segmented {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.okey-segmented > button {
+  padding: 4px var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: 500 var(--text-sm) var(--font-sans);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.okey-segmented > button[aria-pressed="true"] {
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-raised);
+}
+
+/* --- TokenTypeIcon ------------------------------------------------------ */
+.okey-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  font: 600 10px var(--font-mono);
+  flex: none;
+}
+
+/* --- ColorSwatch --------------------------------------------------------- */
+.okey-swatch {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  /* Checkerboard shows through translucent colors. */
+  background-image:
+    linear-gradient(
+      45deg,
+      var(--gray-200) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--gray-200) 75%
+    ),
+    linear-gradient(
+      45deg,
+      var(--gray-200) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--gray-200) 75%
+    );
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    4px 4px;
+  flex: none;
+}
+
+.okey-swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--okey-swatch-color, transparent);
+  box-shadow: inset 0 0 0 1px hsl(213 25% 10% / 0.12);
+}
+
+.okey-swatch--gamut-warning::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning-500);
+  box-shadow: 0 0 0 2px var(--surface-panel);
+  z-index: 1;
+}
+
+/* --- ReferencePill -------------------------------------------------------- */
+.okey-ref-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 1px var(--space-2);
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-50);
+  color: var(--accent-700);
+  font: 500 var(--text-sm) var(--font-mono);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.okey-ref-pill:hover {
+  background: var(--accent-100);
+}
+
+.okey-ref-pill--broken {
+  background: hsl(0 72% 51% / 0.08);
+  color: var(--danger-600);
+}
+
+/* --- TokenRow -------------------------------------------------------------- */
+.okey-token-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0 var(--space-3);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: 400 var(--text-md) var(--font-sans);
+  color: var(--text-primary);
+  cursor: pointer;
+  height: 100%;
+}
+
+.okey-token-row:hover {
+  background: var(--surface-hover);
+}
+
+.okey-token-row[aria-selected="true"] {
+  background: var(--surface-selected);
+  box-shadow: inset 2px 0 0 var(--accent-500);
+}
+
+.okey-token-row__name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.okey-token-row__name--deprecated {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.okey-token-row__value {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%;
+}

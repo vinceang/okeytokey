@@ -21,6 +21,22 @@ Figma plugin around it.
 Dependency boundaries are enforced with dependency-cruiser (`pnpm check:boundaries`);
 violations and circular dependencies fail CI.
 
+## Status
+
+| Phase                                        | Status                    |
+| -------------------------------------------- | ------------------------- |
+| 0 — Scaffold                                 | ✅ Done                   |
+| 1 — Core + schema (parse, resolve, color)    | ✅ Done (ADRs 0001, 0002) |
+| 2 — Studio editor (CRUD, undo, persistence)  | ✅ Done (ADR 0003)        |
+| 3 — Validation, diff, refactor               | Next                      |
+| 4 — Sync + transforms                        | Planned                   |
+| 5 — Figma plugin                             | Planned                   |
+| 6 — Polish (onboarding, palette, a11y, perf) | Planned                   |
+
+Run the editor: `pnpm install && pnpm build && pnpm --filter @okeytokey/studio dev`,
+then open http://localhost:5173. First run seeds a small primitive → semantic starter
+document (edits persist in IndexedDB).
+
 ## Development
 
 ```sh

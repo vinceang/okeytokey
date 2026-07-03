@@ -5,7 +5,7 @@ export abstract class OkeytokeyError extends Error {}
 
 /** A token set failed schema validation on parse. */
 export class TokenParseError extends OkeytokeyError {
-  override readonly name = "TokenParseError";
+  override readonly name: string = "TokenParseError";
   constructor(
     readonly setName: string,
     readonly issues: readonly SchemaIssue[],
