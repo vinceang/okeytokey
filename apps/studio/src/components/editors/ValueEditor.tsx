@@ -7,6 +7,7 @@ import { Button, ReferencePill, TextInput } from "@okeytokey/ui";
 import { safeResolve } from "../../hooks/use-resolver.js";
 import { AliasPicker } from "./AliasPicker.js";
 import { ColorEditor } from "./ColorEditor.js";
+import { ColorFormatBar } from "./ColorFormatBar.js";
 import { ShadowEditor } from "./ShadowEditor.js";
 import { TypographyEditor } from "./TypographyEditor.js";
 
@@ -155,7 +156,14 @@ export function ValueEditor({ token, resolver, onCommit }: ValueEditorProps) {
   let editor;
   switch (token.type) {
     case "color":
-      editor = <ColorEditor value={typeof value === "string" ? value : ""} onCommit={onCommit} />;
+      editor = (
+        <>
+          <ColorEditor value={typeof value === "string" ? value : ""} onCommit={onCommit} />
+          {typeof value === "string" && (
+            <ColorFormatBar path={token.pathString} value={value} onCommit={onCommit} />
+          )}
+        </>
+      );
       break;
     case "number":
       editor = <TextValueEditor value={value} numeric onCommit={onCommit} />;

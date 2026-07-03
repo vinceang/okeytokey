@@ -104,6 +104,12 @@ export {
 } from "./diff/diff.js";
 
 export {
+  planColorFormatConversion,
+  type FormatConversionEntry,
+  type FormatConversionPlan,
+} from "./color/convert.js";
+
+export {
   DEFAULT_SCALE_STEPS,
   SCALE_GENERATOR_ID,
   planColorScale,

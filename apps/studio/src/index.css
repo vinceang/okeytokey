@@ -630,6 +630,14 @@ a.sidebar-item {
   font-size: var(--text-sm);
 }
 
+/* --- Color format bar --------------------------------------------------------------------- */
+.format-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* --- Scale generator -------------------------------------------------------------------- */
 .scale-preview {
   display: flex;
