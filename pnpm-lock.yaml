@@ -155,6 +155,40 @@ importers:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@24.13.2)(yaml@2.9.0)
 
+  packages/ai:
+    dependencies:
+      '@okeytokey/core':
+        specifier: workspace:*
+        version: link:../core
+      '@okeytokey/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+    devDependencies:
+      '@okeytokey/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint-config
+      '@okeytokey/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@okeytokey/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest-config
+      '@vitest/coverage-v8':
+        specifier: ^3.0.0
+        version: 3.2.6(vitest@3.2.6(@types/node@26.1.0)(yaml@2.9.0))
+      eslint:
+        specifier: ^9.20.0
+        version: 9.39.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@26.1.0)(yaml@2.9.0)
+
   packages/core:
     dependencies:
       '@okeytokey/schema':

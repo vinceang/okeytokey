@@ -174,6 +174,17 @@
       <li>Every content edit is undoable: <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd>, 100 steps.</li>
     </ul>
 
+    <h2 id="scales">4b. Generating color scales</h2>
+    <p>
+      Have anchors like <code>blue.100</code>, <code>blue.500</code>, <code>blue.900</code> and need
+      the steps between? Open <strong>Generate scale steps…</strong> from the command palette
+      (<kbd>⌘K</kbd>). Point it at the group, review the preview — anchors are marked and never
+      touched — and apply. Interpolation happens in OKLCH (perceptually uniform), it's fully
+      deterministic (same anchors, same results, no AI), one undo removes the whole batch, and
+      generated tokens carry <code>lineage</code> metadata recording the generator and its anchor
+      inputs.
+    </p>
+
     <h2 id="themes">5. Themes and theme groups</h2>
     <p>
       Add a theme with <strong>+</strong> in the sidebar, then set each set's status in its ⚙

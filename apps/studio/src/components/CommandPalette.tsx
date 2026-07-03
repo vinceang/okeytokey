@@ -10,6 +10,7 @@ export interface PaletteActions {
   newToken: () => void;
   openExport: () => void;
   openSync: () => void;
+  openScale: () => void;
 }
 
 /**
@@ -113,6 +114,14 @@ export function CommandPalette({
               }}
             >
               Sync with GitHub…
+            </Command.Item>
+            <Command.Item
+              data-testid="palette-scale"
+              onSelect={() => {
+                run(actions.openScale);
+              }}
+            >
+              Generate scale steps…
             </Command.Item>
           </Command.Group>
           <Command.Group heading="Themes">

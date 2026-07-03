@@ -15,3 +15,6 @@ numbered, with Status / Context / Decision / Consequences sections.
 - [0005 — Theme groups and matrix expansion](0005-theme-groups.md): dimensions via
   `group`, user-triggered additive expansion, generated combinations are plain
   themes with name-keyed dedupe (post-v1)
+- [0006 — AI proposal contract and the deterministic boundary](0006-ai-proposal-contract.md):
+  AI proposes / okeytokey proves, operation vocabulary mirroring core, provider
+  abstraction with contract tests, compute-vs-judgment rule (Phase 7)

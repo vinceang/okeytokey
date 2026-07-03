@@ -104,6 +104,15 @@ export {
 } from "./diff/diff.js";
 
 export {
+  DEFAULT_SCALE_STEPS,
+  SCALE_GENERATOR_ID,
+  planColorScale,
+  type ScaleEntry,
+  type ScaleOptions,
+  type ScalePlan,
+} from "./generate/scale.js";
+
+export {
   deprecate,
   planMoveToSet,
   planRename,

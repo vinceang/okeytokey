@@ -14,6 +14,7 @@ Figma plugin around it.
 | `packages/transforms`   | `@okeytokey/transforms`   | Style Dictionary export pipeline + CLI                    |
 | `packages/ui`           | `@okeytokey/ui`           | Shared React component library                            |
 | `packages/figma-bridge` | `@okeytokey/figma-bridge` | Figma node/variable mapping + message protocol            |
+| `packages/ai`           | `@okeytokey/ai`           | AI provider abstraction + proposal contract               |
 | `apps/studio`           | `@okeytokey/studio`       | Web token editor (Vite + React)                           |
 | `apps/figma-plugin`     | `@okeytokey/figma-plugin` | Figma plugin                                              |
 | `tooling/*`             | `@okeytokey/tsconfig` etc | Shared tsconfig / eslint / vitest presets                 |
@@ -32,6 +33,7 @@ violations and circular dependencies fail CI.
 | 4 — Sync + transforms                        | ✅ Done (ADR 0004)        |
 | 5 — Figma plugin                             | ✅ Done                   |
 | 6 — Polish (onboarding, palette, a11y, perf) | ✅ Done                   |
+| 7 — AI-assisted workflows (ADR 0006)         | 🚧 7.0–7.1 done           |
 
 All six phases of v1 are complete. CI runs the full gauntlet on every push: build,
 typecheck, lint, format, boundary rules, unit tests (core coverage gate ≥90%),

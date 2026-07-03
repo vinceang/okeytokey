@@ -7,6 +7,7 @@ import { DiagnosticsPanel } from "./components/DiagnosticsPanel.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import { Inspector } from "./components/Inspector.js";
 import { Onboarding, ONBOARDED_KEY } from "./components/Onboarding.js";
+import { ScaleDialog } from "./components/ScaleDialog.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SyncDialog } from "./components/SyncDialog.js";
 import { TokenList } from "./components/TokenList.js";
@@ -174,6 +175,13 @@ export function App() {
           }}
         />
       )}
+      {dialog === "scale" && (
+        <ScaleDialog
+          onClose={() => {
+            openDialog(undefined);
+          }}
+        />
+      )}
       <CommandPalette
         resolver={resolver}
         actions={{
@@ -185,6 +193,9 @@ export function App() {
           },
           openSync: () => {
             openDialog("sync");
+          },
+          openScale: () => {
+            openDialog("scale");
           },
         }}
       />

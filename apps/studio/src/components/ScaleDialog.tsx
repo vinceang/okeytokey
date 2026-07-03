@@ -1,0 +1,132 @@
+import { useMemo, useState } from "react";
+
+import { DEFAULT_SCALE_STEPS, planColorScale } from "@okeytokey/core";
+import { Button, ColorSwatch, Field, TextInput } from "@okeytokey/ui";
+
+import { cmdApplyFix } from "../state/commands.js";
+import { useDocumentStore } from "../state/document-store.js";
+import { useUiStore } from "../state/ui-store.js";
+import { Dialog } from "./dialogs.js";
+
+/**
+ * The deterministic Scale Generator (ADR 0006): pick a group with numeric
+ * color anchors, preview the OKLCH-interpolated steps, apply through the
+ * undo stack. No AI involved — same inputs, same outputs, every time.
+ */
+export function ScaleDialog({ onClose }: { onClose: () => void }) {
+  const document = useDocumentStore((state) => state.document);
+  const execute = useDocumentStore((state) => state.execute);
+  const activeSet = useUiStore((state) => state.activeSet);
+  const selection = useUiStore((state) => state.selection);
+
+  // Prefill from the selected token's parent group.
+  const initialGroup = selection ? selection.path.slice(0, selection.path.lastIndexOf(".")) : "";
+  const [groupPath, setGroupPath] = useState(initialGroup);
+  const [stepsText, setStepsText] = useState(DEFAULT_SCALE_STEPS.join(", "));
+
+  const setName = selection?.set ?? activeSet;
+
+  const preview = useMemo(() => {
+    if (setName === undefined || groupPath.trim() === "") {
+      return { plan: undefined, error: "Pick a group with at least two numeric color anchors." };
+    }
+    const steps = stepsText
+      .split(",")
+      .map((part) => Number(part.trim()))
+      .filter((step) => Number.isInteger(step) && step > 0);
+    try {
+      return {
+        plan: planColorScale(document, setName, groupPath.trim(), { steps }),
+        error: undefined,
+      };
+    } catch (planError) {
+      return {
+        plan: undefined,
+        error: planError instanceof Error ? planError.message : String(planError),
+      };
+    }
+  }, [document, setName, groupPath, stepsText]);
+
+  const apply = () => {
+    const plan = preview.plan;
+    if (!plan || plan.generated.length === 0) return;
+    execute(
+      cmdApplyFix({
+        label: `Generate ${String(plan.generated.length)} scale steps in ${plan.groupPath}`,
+        apply: () => plan.apply(),
+      }),
+    );
+    onClose();
+  };
+
+  return (
+    <Dialog title="Generate scale steps" onClose={onClose}>
+      <Field label="Group (with numeric color anchors)">
+        {(id) => (
+          <TextInput
+            id={id}
+            mono
+            autoFocus
+            placeholder="colors.blue"
+            value={groupPath}
+            data-testid="scale-group-input"
+            onChange={(event) => {
+              setGroupPath(event.target.value);
+            }}
+          />
+        )}
+      </Field>
+      <Field label="Steps">
+        {(id) => (
+          <TextInput
+            id={id}
+            mono
+            value={stepsText}
+            data-testid="scale-steps-input"
+            onChange={(event) => {
+              setStepsText(event.target.value);
+            }}
+          />
+        )}
+      </Field>
+
+      {preview.error !== undefined && <p className="editor-error">{preview.error}</p>}
+      {preview.plan && (
+        <div className="scale-preview" data-testid="scale-preview">
+          {[...preview.plan.anchors, ...preview.plan.generated]
+            .sort((a, b) => a.step - b.step)
+            .map((entry) => (
+              <div className="scale-preview-row" key={entry.path}>
+                <ColorSwatch color={entry.value} />
+                <code>{entry.path}</code>
+                <span className="scale-value">{entry.value}</span>
+                <span className={entry.anchor ? "scale-tag scale-tag--anchor" : "scale-tag"}>
+                  {entry.anchor ? "anchor" : "new"}
+                </span>
+              </div>
+            ))}
+          {preview.plan.skipped.length > 0 && (
+            <p className="usage-empty">
+              Skipped {preview.plan.skipped.map((entry) => entry.step).join(", ")} — outside the
+              anchor range.
+            </p>
+          )}
+        </div>
+      )}
+
+      <footer>
+        <Button variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          disabled={!preview.plan || preview.plan.generated.length === 0}
+          onClick={apply}
+          data-testid="scale-apply"
+        >
+          Generate {String(preview.plan?.generated.length ?? 0)} token(s)
+        </Button>
+      </footer>
+    </Dialog>
+  );
+}
