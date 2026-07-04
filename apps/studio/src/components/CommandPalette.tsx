@@ -11,6 +11,7 @@ export interface PaletteActions {
   openExport: () => void;
   openSync: () => void;
   openScale: () => void;
+  openDimensionScale: () => void;
   openAiSettings: () => void;
   openAiGenerate: () => void;
 }
@@ -124,6 +125,14 @@ export function CommandPalette({
               }}
             >
               Generate scale steps…
+            </Command.Item>
+            <Command.Item
+              data-testid="palette-dimension-scale"
+              onSelect={() => {
+                run(actions.openDimensionScale);
+              }}
+            >
+              Generate spacing / size scale…
             </Command.Item>
             <Command.Item
               data-testid="palette-ai"

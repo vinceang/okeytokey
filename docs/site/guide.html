@@ -212,7 +212,7 @@
       <li>Every content edit is undoable: <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd>, 100 steps.</li>
     </ul>
 
-    <h2 id="scales">4b. Generating color scales</h2>
+    <h2 id="scales">4b. Generating scales (color, spacing, size)</h2>
     <p>
       Open <strong>Generate scale steps…</strong> from the command palette (<kbd>⌘K</kbd>) and point
       it at either shape:
@@ -237,6 +237,15 @@
       inputs, same results, no AI), one undo removes the whole batch — including the seed rename —
       and generated tokens carry <code>lineage</code> metadata recording the generator and its
       anchor inputs.
+    </p>
+    <p>
+      For dimensions and durations there's a sibling:
+      <strong>Generate spacing / size scale…</strong> (also <kbd>⌘K</kbd>). Give it a base value
+      (<code>16px</code>) and a ratio — pick a preset (minor third, major third, perfect fourth,
+      golden, ×2) or type your own — and it builds a <em>modular scale</em>:
+      <code>value(step) = base × ratio^offset</code> around the base step. Existing steps are kept,
+      only the missing ones are generated, and the unit comes from your base value. Same
+      determinism, same one-undo, same <code>lineage</code>.
     </p>
 
     <h2 id="themes">5. Themes and theme groups</h2>

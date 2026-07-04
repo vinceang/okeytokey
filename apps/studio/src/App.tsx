@@ -9,6 +9,7 @@ import { DiagnosticsPanel } from "./components/DiagnosticsPanel.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import { Inspector } from "./components/Inspector.js";
 import { Onboarding, ONBOARDED_KEY } from "./components/Onboarding.js";
+import { DimensionScaleDialog } from "./components/DimensionScaleDialog.js";
 import { ScaleDialog } from "./components/ScaleDialog.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SyncDialog } from "./components/SyncDialog.js";
@@ -185,6 +186,13 @@ export function App() {
           }}
         />
       )}
+      {dialog === "dimension-scale" && (
+        <DimensionScaleDialog
+          onClose={() => {
+            openDialog(undefined);
+          }}
+        />
+      )}
       {dialog === "ai" && (
         <AiProviderDialog
           onClose={() => {
@@ -213,6 +221,9 @@ export function App() {
           },
           openScale: () => {
             openDialog("scale");
+          },
+          openDimensionScale: () => {
+            openDialog("dimension-scale");
           },
           openAiSettings: () => {
             openDialog("ai");

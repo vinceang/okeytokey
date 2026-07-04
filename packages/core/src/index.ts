@@ -121,9 +121,15 @@ export {
 
 export {
   DEFAULT_SCALE_STEPS,
+  DIMENSION_SCALE_GENERATOR_ID,
+  RATIO_PRESETS,
   SCALE_GENERATOR_ID,
   planColorScale,
   planColorScaleFromSeed,
+  planDimensionScale,
+  type DimensionScaleEntry,
+  type DimensionScaleOptions,
+  type DimensionScalePlan,
   type ScaleEntry,
   type ScaleOptions,
   type ScalePlan,

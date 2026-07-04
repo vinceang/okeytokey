@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { TokenParseError } from "../errors.js";
 import { createTokenDocument, parseTokenSet } from "../parser/document.js";
 import { wcagContrast } from "../color/contrast.js";
-import { DEFAULT_SCALE_STEPS, planColorScale, planColorScaleFromSeed } from "./scale.js";
+import {
+  DEFAULT_SCALE_STEPS,
+  DIMENSION_SCALE_GENERATOR_ID,
+  planColorScale,
+  planColorScaleFromSeed,
+  planDimensionScale,
+} from "./scale.js";
 
 const doc = (json: string) => createTokenDocument([parseTokenSet("global", json)]);
 
@@ -247,5 +253,73 @@ describe("planColorScaleFromSeed", () => {
     expect(() => planColorScaleFromSeed(doc(ANCHORS), "global", "colors.blue.500")).toThrow(
       /already looks like a scale step/,
     );
+  });
+});
+
+describe("planDimensionScale", () => {
+  const EMPTY = `{ "spacing": { "$type": "dimension" } }`;
+
+  it("computes value(step) = base × ratio^offset around the base step", () => {
+    const plan = planDimensionScale(doc(EMPTY), "global", "spacing", {
+      base: "16px",
+      ratio: 2,
+      steps: [300, 400, 500, 600, 700],
+      baseStep: 500,
+    });
+    expect(plan.unit).toBe("px");
+    const byStep = new Map(plan.generated.map((entry) => [entry.step, entry.value]));
+    expect(byStep.get(500)).toBe("16px"); // ratio^0
+    expect(byStep.get(600)).toBe("32px"); // ×2
+    expect(byStep.get(700)).toBe("64px"); // ×4
+    expect(byStep.get(400)).toBe("8px"); // ÷2
+    expect(byStep.get(300)).toBe("4px"); // ÷4
+  });
+
+  it("keeps existing steps as anchors and only generates the missing ones", () => {
+    const withOne = `{ "spacing": { "$type": "dimension", "500": { "$value": "1rem" } } }`;
+    const plan = planDimensionScale(doc(withOne), "global", "spacing", {
+      base: "1rem",
+      ratio: 1.5,
+      steps: [400, 500, 600],
+      baseStep: 500,
+    });
+    expect(plan.anchors.map((entry) => entry.step)).toEqual([500]);
+    expect(plan.generated.map((entry) => entry.step)).toEqual([400, 600]);
+    const applied = plan.apply().sets.get("global");
+    expect(applied?.tokens.get("spacing.500")?.value).toBe("1rem"); // untouched
+    expect(applied?.tokens.get("spacing.600")?.value).toBe("1.5rem");
+  });
+
+  it("stamps lineage and sorts generated steps numerically", () => {
+    const plan = planDimensionScale(doc(EMPTY), "global", "spacing", {
+      base: "16px",
+      steps: [100, 500, 900],
+      baseStep: 500,
+    });
+    const applied = plan.apply().sets.get("global");
+    expect([...(applied?.tokens.keys() ?? [])]).toEqual([
+      "spacing.100",
+      "spacing.500",
+      "spacing.900",
+    ]);
+    expect(applied?.tokens.get("spacing.100")?.okeytokey?.lineage?.generator).toBe(
+      DIMENSION_SCALE_GENERATOR_ID,
+    );
+  });
+
+  it("rejects a bad ratio, a non-dimension base, and a base step outside the steps", () => {
+    expect(() =>
+      planDimensionScale(doc(EMPTY), "global", "spacing", { base: "16px", ratio: 1 }),
+    ).toThrow(/Ratio must be/);
+    expect(() => planDimensionScale(doc(EMPTY), "global", "spacing", { base: "red" })).toThrow(
+      /not a dimension value/,
+    );
+    expect(() =>
+      planDimensionScale(doc(EMPTY), "global", "spacing", {
+        base: "16px",
+        steps: [100, 200],
+        baseStep: 500,
+      }),
+    ).toThrow(/must be one of the steps/);
   });
 });

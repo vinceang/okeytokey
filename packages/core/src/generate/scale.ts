@@ -4,6 +4,7 @@ const toOklch = converter("oklch");
 
 import { formatColor, isColor, isInSrgbGamut, parseColor } from "../color/color.js";
 import { TokenParseError } from "../errors.js";
+import { formatQuantity, parseQuantity } from "../resolver/expression.js";
 import { createToken, setTokenMeta, withSet } from "../mutate/mutate.js";
 import {
   parseTokenSet,
@@ -362,5 +363,152 @@ export function planColorScaleFromSeed(
     scale,
     // scale closed over the post-rename document, so this applies both.
     apply: () => scale.apply(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Modular dimension scale (spacing / type / any quantity)
+// ---------------------------------------------------------------------------
+
+export const DIMENSION_SCALE_GENERATOR_ID = "scale:modular";
+
+/** Common typographic/spacing ratios, for a preset dropdown. */
+export const RATIO_PRESETS: readonly { readonly name: string; readonly ratio: number }[] = [
+  { name: "Minor third", ratio: 1.2 },
+  { name: "Major third", ratio: 1.25 },
+  { name: "Perfect fourth", ratio: 1.333 },
+  { name: "Golden ratio", ratio: 1.618 },
+  { name: "Doubling (×2)", ratio: 2 },
+];
+
+export interface DimensionScaleOptions {
+  /** The value the ramp is anchored to, e.g. "16px". Its unit is the scale's unit. */
+  readonly base: string;
+  /** Step-to-step multiplier. Default 1.5. */
+  readonly ratio?: number;
+  /** Steps to produce. Default {@link DEFAULT_SCALE_STEPS}. */
+  readonly steps?: readonly number[];
+  /** Which step carries the base value (exponent 0). Must be one of `steps`. Default 500. */
+  readonly baseStep?: number;
+  /** Decimal places to round generated numbers to. Default 3. */
+  readonly round?: number;
+  /** Token type to create. Default "dimension". */
+  readonly tokenType?: "dimension" | "duration";
+}
+
+export interface DimensionScaleEntry {
+  readonly path: string;
+  readonly step: number;
+  readonly value: string;
+  /** True for steps that already exist (kept, never overwritten). */
+  readonly anchor: boolean;
+}
+
+export interface DimensionScalePlan {
+  readonly groupPath: string;
+  readonly setName: string;
+  readonly unit: string;
+  readonly ratio: number;
+  readonly baseStep: number;
+  readonly base: string;
+  /** Existing numeric steps in the group, kept as-is. */
+  readonly anchors: readonly DimensionScaleEntry[];
+  readonly generated: readonly DimensionScaleEntry[];
+  readonly apply: () => TokenDocument;
+}
+
+/**
+ * Plan a modular dimension scale: value(step) = base × ratio^(k), where k is
+ * the step's offset from `baseStep` within the sorted step list. This is the
+ * canonical spacing/type ramp — a base and a ratio fully determine it, so it
+ * is pure computation (no AI). Existing numeric steps are kept, not
+ * overwritten; only missing steps are generated.
+ */
+export function planDimensionScale(
+  document: TokenDocument,
+  setName: string,
+  groupPath: string,
+  options: DimensionScaleOptions,
+): DimensionScalePlan {
+  const set = document.sets.get(setName);
+  if (!set) {
+    fail(setName, "", "Set does not exist");
+  }
+  const ratio = options.ratio ?? 1.5;
+  if (!(ratio > 0) || ratio === 1) {
+    fail(setName, groupPath, "Ratio must be a positive number other than 1");
+  }
+  const baseQuantity = parseQuantity(options.base);
+  if (!baseQuantity) {
+    fail(setName, groupPath, `Base ${JSON.stringify(options.base)} is not a dimension value`);
+  }
+  const baseStep = options.baseStep ?? 500;
+  const round = options.round ?? 3;
+  const tokenType = options.tokenType ?? "dimension";
+  const steps = [...new Set(options.steps ?? DEFAULT_SCALE_STEPS)].sort((a, b) => a - b);
+  const baseIndex = steps.indexOf(baseStep);
+  if (baseIndex === -1) {
+    fail(
+      setName,
+      groupPath,
+      `The base step ${String(baseStep)} must be one of the steps (${steps.join(", ")})`,
+    );
+  }
+
+  const prefix = `${groupPath}.`;
+  const existing = new Set<number>();
+  for (const token of set.tokens.values()) {
+    if (!token.pathString.startsWith(prefix)) continue;
+    const name = token.pathString.slice(prefix.length);
+    if (/^\d+$/.test(name)) existing.add(Number(name));
+  }
+
+  const factor = 10 ** round;
+  const roundTo = (value: number) => Math.round(value * factor) / factor;
+  const anchors: DimensionScaleEntry[] = [];
+  const generated: DimensionScaleEntry[] = [];
+
+  steps.forEach((step, index) => {
+    const path = `${groupPath}.${String(step)}`;
+    const computed = formatQuantity({
+      value: roundTo(baseQuantity.value * ratio ** (index - baseIndex)),
+      unit: baseQuantity.unit,
+    });
+    if (existing.has(step)) {
+      const token = set.tokens.get(path);
+      const raw = token && typeof token.value === "string" ? token.value : computed;
+      anchors.push({ path, step, value: raw, anchor: true });
+    } else {
+      generated.push({ path, step, value: computed, anchor: false });
+    }
+  });
+
+  const apply = (): TokenDocument => {
+    let nextSet = set;
+    for (const entry of generated) {
+      nextSet = createToken(nextSet, entry.path, { type: tokenType, value: entry.value });
+      nextSet = setTokenMeta(nextSet, entry.path, {
+        okeytokey: {
+          lineage: {
+            generator: DIMENSION_SCALE_GENERATOR_ID,
+            inputs: [options.base],
+            params: { step: entry.step, ratio, baseStep },
+          },
+        },
+      });
+    }
+    return withSet(document, sortGroupNumerically(nextSet, groupPath));
+  };
+
+  return {
+    groupPath,
+    setName,
+    unit: baseQuantity.unit,
+    ratio,
+    baseStep,
+    base: options.base,
+    anchors,
+    generated,
+    apply,
   };
 }
