@@ -14,6 +14,7 @@ import {
   formatTailwindTheme,
   formatTsConsts,
   resolveForExport,
+  transformEntries,
 } from "./formats.js";
 
 const document = () =>
@@ -99,6 +100,37 @@ describe("formatters", () => {
     expect(tailwind).toContain("--color-colors-blue: #3b82f6;");
     expect(tailwind).toContain("--spacing-spacing-md: 16px;");
     expect(tailwind.startsWith("@theme {")).toBe(true);
+  });
+});
+
+describe("transformEntries px→rem", () => {
+  const light = resolveForExport(document(), themes[0]);
+
+  it("is a no-op unless enabled, and passing", () => {
+    expect(transformEntries(light)).toEqual(light);
+    expect(transformEntries(light, { pxToRem: false })).toEqual(light);
+  });
+
+  it("converts px lengths to rem at 1rem = 16px, format-agnostic", () => {
+    const rem = transformEntries(light, { pxToRem: true });
+    const css = formatCssVariables(rem);
+    expect(css).toContain("--spacing-base: 0.25rem;"); // 4px
+    expect(css).toContain("--spacing-md: 1rem;"); // 16px
+    // Shadow layer: each px length converts, 0px collapses to 0, color kept.
+    expect(css).toContain("--shadow-card: 0 0.125rem 0.5rem 0 #00000022;");
+    // Non-dimension values are untouched.
+    expect(css).toContain("--colors-blue: #3b82f6;");
+  });
+
+  it("honors a custom rem base", () => {
+    const rem = transformEntries(light, { pxToRem: true, remBasePx: 8 });
+    expect(formatCssVariables(rem)).toContain("--spacing-md: 2rem;"); // 16 / 8
+  });
+
+  it("does not mutate the input entries", () => {
+    const before = formatCssVariables(light);
+    transformEntries(light, { pxToRem: true });
+    expect(formatCssVariables(light)).toBe(before);
   });
 });
 

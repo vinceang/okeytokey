@@ -4,6 +4,7 @@ import {
   BUILTIN_OUTPUT_TARGETS,
   formatTokens,
   resolveForExport,
+  transformEntries,
   type FormatId,
 } from "@okeytokey/transforms";
 import { Button, Field, Select } from "@okeytokey/ui";
@@ -24,16 +25,17 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const [format, setFormat] = useState<FormatId>("css");
   const [themeName, setThemeName] = useState<string>("");
   const [outputReferences, setOutputReferences] = useState(false);
+  const [pxToRem, setPxToRem] = useState(false);
 
   const output = useMemo(() => {
     try {
       const theme = themes.find((candidate) => candidate.name === themeName);
-      const entries = resolveForExport(tokenDocument, theme);
+      const entries = transformEntries(resolveForExport(tokenDocument, theme), { pxToRem });
       return formatTokens(format, entries, { outputReferences });
     } catch (error) {
       return `/* ${error instanceof Error ? error.message : String(error)} */`;
     }
-  }, [tokenDocument, themes, format, themeName, outputReferences]);
+  }, [tokenDocument, themes, format, themeName, outputReferences, pxToRem]);
 
   const download = () => {
     const url = URL.createObjectURL(new Blob([output], { type: "text/plain" }));
@@ -97,6 +99,17 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
           Preserve references as var() chains
         </label>
       )}
+      <label style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>
+        <input
+          type="checkbox"
+          checked={pxToRem}
+          data-testid="export-px-to-rem"
+          onChange={(event) => {
+            setPxToRem(event.target.checked);
+          }}
+        />{" "}
+        Convert px to rem (1rem = 16px)
+      </label>
       <textarea
         className="okey-input okey-input--mono"
         rows={12}

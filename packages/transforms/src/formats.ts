@@ -1,4 +1,5 @@
 import {
+  REM_BASE_PX,
   createResolver,
   createThemeResolver,
   extractReferences,
@@ -30,6 +31,56 @@ export interface FormatOptions {
 export interface ResolvedEntry {
   readonly path: string;
   readonly token: ResolvedToken;
+}
+
+export interface ExportTransformOptions {
+  /** Rewrite px lengths in resolved values to rem. Default false. */
+  readonly pxToRem?: boolean;
+  /** Pixels per rem for the conversion. Default {@link REM_BASE_PX} (16). */
+  readonly remBasePx?: number;
+}
+
+// Every px length in a string, including inside shadow/typography values.
+const PX_LENGTH = /(-?\d*\.?\d+)px\b/g;
+
+function pxToRemString(text: string, base: number): string {
+  return text.replace(PX_LENGTH, (_match, number: string) => {
+    const rem = Number(number) / base;
+    if (rem === 0) return "0";
+    // Trim floating-point noise (16→1, 4→0.25) without trailing zeros.
+    return `${String(Number(rem.toFixed(5)))}rem`;
+  });
+}
+
+/** Deep-convert px→rem in any resolved value (strings, arrays, objects). */
+function convertPxDeep(value: unknown, base: number): unknown {
+  if (typeof value === "string") return pxToRemString(value, base);
+  if (Array.isArray(value)) return value.map((item) => convertPxDeep(item, base));
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, convertPxDeep(item, base)]),
+    );
+  }
+  return value;
+}
+
+/**
+ * Apply export-time transforms to resolved entries, format-agnostic (every
+ * output — CSS, SCSS, TS, Tailwind — sees the transformed values). Currently
+ * a px→rem rewrite mirroring the editor's unit switcher: deterministic, at
+ * the CSS convention of 1rem = 16px (configurable). Aliases emitted as
+ * var() chains are untouched — only concrete values convert.
+ */
+export function transformEntries(
+  entries: readonly ResolvedEntry[],
+  options: ExportTransformOptions = {},
+): ResolvedEntry[] {
+  if (options.pxToRem !== true) return [...entries];
+  const base = options.remBasePx ?? REM_BASE_PX;
+  return entries.map((entry) => ({
+    ...entry,
+    token: { ...entry.token, value: convertPxDeep(entry.token.value, base) },
+  }));
 }
 
 /** Resolve every visible token (theme-aware when a theme is given). */

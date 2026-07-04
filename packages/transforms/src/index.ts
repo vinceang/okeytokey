@@ -14,6 +14,8 @@ export {
   formatTokens,
   formatTsConsts,
   resolveForExport,
+  transformEntries,
+  type ExportTransformOptions,
   type FormatId,
   type FormatOptions,
   type ResolvedEntry,

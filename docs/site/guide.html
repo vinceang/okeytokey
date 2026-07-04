@@ -319,8 +319,11 @@
     <p>
       <strong>Export CSS/SCSS/TS…</strong> (sidebar) previews and downloads: CSS custom properties
       (optionally keeping aliases as <code>var()</code> chains), SCSS map, TypeScript consts with
-      literal types, or a Tailwind v4 <code>@theme</code> block — each resolved under any theme. For
-      CI, the standalone CLI reads <code>okeytokey.config.json</code>:
+      literal types, or a Tailwind v4 <code>@theme</code> block — each resolved under any theme.
+      <strong>Convert px to rem</strong> rewrites every px length in the output to rem at
+      1rem&nbsp;=&nbsp;16px (shadows and composite values included; <code>0px</code> collapses to
+      <code>0</code>) — format-agnostic, so it applies to whichever target you pick. For CI, the
+      standalone CLI reads <code>okeytokey.config.json</code>:
     </p>
     <pre><code>{
   "sets": ["tokens/global.json", "tokens/dark.json"],

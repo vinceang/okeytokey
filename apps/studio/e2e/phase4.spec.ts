@@ -6,6 +6,12 @@ test("export dialog previews and switches formats/themes", async ({ page }) => {
 
   await expect(page.getByTestId("export-preview")).toContainText("--spacing-md: 16px;");
 
+  // px→rem transform rewrites dimension values at 1rem = 16px, then off again.
+  await page.getByTestId("export-px-to-rem").check();
+  await expect(page.getByTestId("export-preview")).toContainText("--spacing-md: 1rem;");
+  await page.getByTestId("export-px-to-rem").uncheck();
+  await expect(page.getByTestId("export-preview")).toContainText("--spacing-md: 16px;");
+
   await page.getByTestId("export-format").selectOption("ts");
   await expect(page.getByTestId("export-preview")).toContainText("as const");
 
