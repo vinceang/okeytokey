@@ -11,6 +11,14 @@ so it doesn't live only in commit messages.
 - ~~Docs site with a real user guide~~ — shipped post-v1 (`docs/site/`)
 - ~~Solidify round~~ — shipped: numeric scale-step tree sort, set/theme kebab menu
   (guarded delete, rename, sort A→Z, per-set export), `sortTokenSet` core mutation
+- ~~Treegrid refactor~~ — shipped in 4 phases: the main view is a Figma-Variables-style
+  treegrid (hierarchy in the Name column, themes as value columns). Inherited cells
+  dim, overrides full-strength; inline cell editing routes base edits in place and
+  writes sparse overrides into the theme's own set elsewhere (hover ↺ resets);
+  double-click renames through the refactor; header ＋ adds a mode (set + theme),
+  footer ＋ adds a token; ARIA treegrid roles + ←/→/Enter cell keyboard nav.
+  Possible follow-up: an "all tokens" union view across sets (rows currently come
+  from the active set).
 - **Publish `@okeytokey/*` to npm** — changesets are configured; needs a decision on
   the npm scope/org (the unscoped `okeytokey` and `create-okeytokey` names are
   already reserved) and a release workflow.
