@@ -50,6 +50,10 @@ PRD), but these PRD commitments are missing, in priority order:
   writes sparse overrides into the theme's own set elsewhere (hover ↺ resets);
   double-click renames through the refactor; header ＋ adds a mode (set + theme),
   footer ＋ adds a token; ARIA treegrid roles + ←/→/Enter cell keyboard nav.
+  Follow-up shipped: the sidebar THEMES section folded into the grid header —
+  theme activation by clicking the column name, per-column ⋮ (Edit sets…,
+  Delete theme…), and a header ＋ menu (New mode / New theme only / ⊞ Generate
+  combinations). The sidebar now owns sets only.
   Possible follow-up: an "all tokens" union view across sets (rows currently come
   from the active set).
 - **Publish `@okeytokey/*` to npm** — changesets are configured; needs a decision on

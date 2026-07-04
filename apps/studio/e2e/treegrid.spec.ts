@@ -179,6 +179,7 @@ test("＋ mode adds a set and a theme column; its cells take sparse overrides", 
   page.once("dialog", (dialog) => {
     void dialog.accept("high-contrast");
   });
+  await page.getByTestId("add-column").click();
   await page.getByTestId("add-mode").click();
 
   // New column, new set, theme joins the mode group.

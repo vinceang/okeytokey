@@ -3,13 +3,16 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 
 import {
   createResolver,
+  expandThemeMatrix,
   gamutWarning,
   isColor,
   parseColor,
   resolutionOrder,
+  themeFromCombination,
   type JsonMap,
   type Resolver,
   type Theme,
+  type ThemeGroup,
   type TokenDocument,
   type TokenNode,
   type TokenSet,
@@ -19,6 +22,8 @@ import { ColorSwatch, ReferencePill, TokenRow } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
 import { CellColorPopover } from "./CellColorPopover.js";
+import { RowMenu } from "./RowMenu.js";
+import { ThemeDialog } from "./dialogs.js";
 import {
   cmdAddSet,
   cmdCreateTokenInSet,
@@ -367,12 +372,14 @@ export function TokenList({ set, resolver }: TokenListProps) {
   const collapsed = useUiStore((state) => state.collapsed);
   const selection = useUiStore((state) => state.selection);
   const activeTheme = useUiStore((state) => state.activeTheme);
+  const setActiveTheme = useUiStore((state) => state.setActiveTheme);
   const select = useUiStore((state) => state.select);
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
   const openDialog = useUiStore((state) => state.openDialog);
 
   const execute = useDocumentStore((state) => state.execute);
   const [dropTarget, setDropTarget] = useState<string>();
+  const [editingTheme, setEditingTheme] = useState<Theme>();
   const [editingCell, setEditingCell] = useState<{
     path: string;
     column: string;
@@ -437,6 +444,51 @@ export function TokenList({ set, resolver }: TokenListProps) {
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
+  };
+
+  // Theme-only creation (no new set): enables every existing set, then opens
+  // the set-stack dialog for fine-tuning. Moved here from the sidebar — the
+  // grid header is where themes live now.
+  const addTheme = () => {
+    const name = window.prompt("Theme name")?.trim();
+    if (!name) return;
+    if (themes.some((theme) => theme.name === name)) {
+      window.alert(`"${name}" already exists.`);
+      return;
+    }
+    const theme: Theme = {
+      name,
+      sets: [...document.sets.keys()].map((existing) => ({
+        set: existing,
+        status: "enabled" as const,
+      })),
+    };
+    setThemes([...themes, theme]);
+    setEditingTheme(theme);
+  };
+
+  // Cartesian expansion (see ADR 0005): themes sharing a `group` form a
+  // dimension; two or more dimensions can generate their combinations.
+  const groupedThemes = new Map<string, Theme[]>();
+  for (const theme of themes) {
+    if (theme.group === undefined) continue;
+    groupedThemes.set(theme.group, [...(groupedThemes.get(theme.group) ?? []), theme]);
+  }
+  const canExpandMatrix = groupedThemes.size >= 2;
+
+  const expandMatrix = () => {
+    const dimensions: ThemeGroup[] = [...groupedThemes.entries()].map(([name, options]) => ({
+      name,
+      options,
+    }));
+    const combinations = expandThemeMatrix(dimensions).map(themeFromCombination);
+    const existing = new Set(themes.map((theme) => theme.name));
+    const fresh = combinations.filter((combination) => !existing.has(combination.name));
+    if (fresh.length === 0) {
+      window.alert("All combinations already exist.");
+      return;
+    }
+    setThemes([...themes, ...fresh]);
   };
 
   // Inline rename (double-click a name): the rename-refactor retargets every
@@ -608,23 +660,127 @@ export function TokenList({ set, resolver }: TokenListProps) {
               }`}
               data-testid={`col-${column.key}`}
             >
-              {column.label}
-              {column.theme?.group !== undefined && (
-                <span className="token-grid-header-group">{column.theme.group}</span>
+              {column.theme ? (
+                <>
+                  {/* Click activates the theme (inspector resolution follows);
+                      clicking the active theme again returns to "no theme". */}
+                  <button
+                    type="button"
+                    className="token-grid-header-label"
+                    title={
+                      activeTheme === column.key
+                        ? `"${column.label}" is the active theme — click to deactivate`
+                        : `Make "${column.label}" the active theme`
+                    }
+                    aria-pressed={activeTheme === column.key}
+                    data-testid={`theme-${column.key}`}
+                    onClick={() => {
+                      setActiveTheme(activeTheme === column.key ? undefined : column.key);
+                    }}
+                  >
+                    {column.label}
+                    {column.theme.group !== undefined && (
+                      <span className="token-grid-header-group">{column.theme.group}</span>
+                    )}
+                  </button>
+                  <RowMenu
+                    label={`Actions for theme ${column.label}`}
+                    testId={`theme-menu-${column.key}`}
+                  >
+                    {(close) => {
+                      const theme = column.theme;
+                      if (!theme) return null;
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="row-menu-item"
+                            data-testid={`edit-theme-${column.key}`}
+                            onClick={() => {
+                              close();
+                              setEditingTheme(theme);
+                            }}
+                          >
+                            Edit sets…
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="row-menu-item row-menu-item--danger"
+                            data-testid={`delete-theme-${column.key}`}
+                            onClick={() => {
+                              close();
+                              if (
+                                window.confirm(
+                                  `Delete theme "${column.label}"? Your tokens are untouched.`,
+                                )
+                              ) {
+                                setThemes(
+                                  themes.filter((candidate) => candidate.name !== column.key),
+                                );
+                                if (activeTheme === column.key) setActiveTheme(undefined);
+                              }
+                            }}
+                          >
+                            Delete theme…
+                          </button>
+                        </>
+                      );
+                    }}
+                  </RowMenu>
+                </>
+              ) : (
+                column.label
               )}
             </div>
           ))}
           <div role="columnheader" className="token-grid-add-wrap">
-            <button
-              type="button"
-              className="token-grid-add-col"
-              title="New mode — a set for its overrides plus a theme column"
-              aria-label="New mode"
-              data-testid="add-mode"
-              onClick={addMode}
-            >
-              ＋
-            </button>
+            <RowMenu label="Add a mode or theme" testId="add-column" icon="＋">
+              {(close) => (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item"
+                    data-testid="add-mode"
+                    onClick={() => {
+                      close();
+                      addMode();
+                    }}
+                  >
+                    New mode (set + theme)…
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item"
+                    data-testid="add-theme"
+                    onClick={() => {
+                      close();
+                      addTheme();
+                    }}
+                  >
+                    New theme only…
+                  </button>
+                  {canExpandMatrix && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="row-menu-item"
+                      title="Generate every combination across theme groups (brand × mode)"
+                      data-testid="expand-matrix"
+                      onClick={() => {
+                        close();
+                        expandMatrix();
+                      }}
+                    >
+                      ⊞ Generate combinations
+                    </button>
+                  )}
+                </>
+              )}
+            </RowMenu>
           </div>
         </div>
         <div
@@ -774,6 +930,14 @@ export function TokenList({ set, resolver }: TokenListProps) {
       >
         ＋ New token
       </button>
+      {editingTheme && (
+        <ThemeDialog
+          theme={editingTheme}
+          onClose={() => {
+            setEditingTheme(undefined);
+          }}
+        />
+      )}
     </div>
   );
 }

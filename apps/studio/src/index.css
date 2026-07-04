@@ -126,6 +126,13 @@ a.sidebar-item {
   box-shadow: var(--shadow-overlay);
 }
 
+/* Portaled variant: positioned fixed against the trigger's rect, so clipping
+   scroll containers (treegrid: contain strict) can't cut the menu off. */
+.row-menu-popover--portal {
+  position: fixed;
+  z-index: 42;
+}
+
 .row-menu-item {
   display: flex;
   align-items: center;
@@ -225,6 +232,40 @@ a.sidebar-item {
 
 .token-grid-header-cell--active {
   color: var(--accent-700);
+}
+
+/* The theme name doubles as the activate/deactivate toggle; the kebab next
+   to it holds Edit sets… / Delete theme… (moved here from the sidebar). */
+.token-grid-header-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-grid-header-label:hover {
+  color: var(--text-primary);
+}
+
+/* Keep the header compact: the kebab only materializes on hover/focus. */
+.token-grid-header-cell .row-menu {
+  opacity: 0;
+}
+
+.token-grid-header-cell:hover .row-menu,
+.token-grid-header-cell .row-menu:focus-within {
+  opacity: 1;
 }
 
 .token-grid-header-group {
@@ -395,22 +436,20 @@ a.sidebar-item {
   text-overflow: ellipsis;
 }
 
-/* ＋ new mode, in the header's trailing track. */
-.token-grid-add-col {
+/* ＋ mode/theme menu, in the header's trailing track. */
+.token-grid-add-wrap .row-menu {
   flex: 1;
+  display: flex;
 }
 
-.token-grid-add-col {
-  align-self: stretch;
-  border: none;
+.token-grid-add-wrap .row-menu > .okey-button {
+  flex: 1;
+  border-radius: 0;
   border-left: 1px solid var(--line-subtle);
-  background: transparent;
   color: var(--text-tertiary);
-  font-size: var(--text-md);
-  cursor: pointer;
 }
 
-.token-grid-add-col:hover {
+.token-grid-add-wrap .row-menu > .okey-button:hover {
   color: var(--text-primary);
   background: var(--surface-hover);
 }
