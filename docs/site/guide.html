@@ -142,11 +142,18 @@
         theme's own set (hover the cell to see which set, and what it resolves to).
       </li>
       <li>
-        <strong>Click a cell to edit inline</strong> (Enter commits, Escape cancels). Editing a base
-        cell edits the token in place. Editing an <em>inherited</em> cell in another theme creates a
-        sparse override in that theme's set — <em>only that theme changes</em>, and your files stay
-        clean. Overridden cells grow a hover <strong>↺</strong> that removes the override and
-        inherits again. Every edit is one undo.
+        <strong>Click a color cell and pick</strong> — a Figma-style popover opens on the cell:
+        swatch + native picker, free-text (any CSS syntax), OKLCH sliders, and
+        <em>⤳ Reference another token…</em> to link the cell to an existing token. Edits apply live
+        while it's open; Escape or clicking outside closes it. Other cell types edit inline (Enter
+        commits, Escape cancels).
+      </li>
+      <li>
+        Editing a base cell edits the token in place. Editing an <em>inherited</em> cell in another
+        theme creates a sparse override in that theme's set — <em>only that theme changes</em>, and
+        your files stay clean. If the theme's override set was deleted, it's recreated automatically
+        in the same step. Overridden cells grow a hover <strong>↺</strong> that removes the override
+        and inherits again. Every edit is one undo.
       </li>
       <li>
         <strong>Double-click a name to rename inline</strong> — the rename-refactor retargets every
