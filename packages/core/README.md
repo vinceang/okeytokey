@@ -64,6 +64,13 @@ First-party rules:
 - `contrast` (warn) — WCAG 2.1 ratios and APCA Lc for declared fg/bg pairs
   (`color/contrast.ts` exports `wcagContrast`, `wcagLevel`, `apcaContrast`)
 - `no-orphan-tokens` (warn), `deprecated-usage` (warn, with a one-click retarget fix)
+- `ownership-required` (off by default) — one diagnostic per top-level group with
+  unowned tokens; ownership comes from effective `$extensions` owners (own or
+  inherited from a group) or CODEOWNERS-style dot-path globs in the rule options
+  (`**` spans segments, `*` matches within one)
+- `layer-skip` (warn) — a `component`-layer token references a `primitive` directly
+- `no-raw-value-in-upper-layers` (warn) — a `semantic`/`component` token with no
+  references at all (aliases, math, and color functions all count as references)
 
 ### `diff/`
 

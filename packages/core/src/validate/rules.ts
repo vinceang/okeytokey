@@ -9,6 +9,7 @@ import type {
   Diagnostic,
   LintRule,
   NamingConventionOptions,
+  OwnershipOptions,
   RuleContext,
 } from "./types.js";
 
@@ -224,6 +225,97 @@ export const deprecatedUsage: LintRule = {
   },
 };
 
+/** Dot-path glob → regex: `**` spans segments, `*` matches within one. */
+function globToRegex(glob: string): RegExp {
+  const source = glob
+    .split(/(\*\*|\*)/)
+    .map((part) => {
+      if (part === "**") return ".*";
+      if (part === "*") return "[^.]*";
+      return part.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+    })
+    .join("");
+  return new RegExp(`^${source}$`);
+}
+
+export const ownershipRequired: LintRule<OwnershipOptions> = {
+  id: "ownership-required",
+  // Opt-in like naming-convention: without owners metadata or config globs,
+  // every token in every document would warn.
+  defaultSeverity: "off",
+  check(context, options, severity) {
+    const globs = Object.entries(options.owners ?? {})
+      .filter(([, owners]) => owners.length > 0)
+      .map(([glob]) => globToRegex(glob));
+    // One diagnostic per top-level group (PRD: "unowned token groups"), not
+    // per token — a document with no ownership yet stays readable.
+    const unowned = new Map<string, number>();
+    for (const [path, token] of context.tokens) {
+      const owned = (token.owners?.length ?? 0) > 0 || globs.some((regex) => regex.test(path));
+      if (owned) continue;
+      const group = token.path.length > 1 ? (token.path[0] ?? path) : path;
+      unowned.set(group, (unowned.get(group) ?? 0) + 1);
+    }
+    return [...unowned].map(([group, count]) => ({
+      ruleId: this.id,
+      severity,
+      tokenPath: group,
+      setName: undefined,
+      message:
+        `"${group}" has no resolvable owner (${String(count)} token${count === 1 ? "" : "s"}) — ` +
+        `add owners in $extensions["com.okeytokey"] or an ownership glob in okeytokey.config.json`,
+    }));
+  },
+};
+
+export const layerSkip: LintRule = {
+  id: "layer-skip",
+  defaultSeverity: "warn",
+  check(context, _options, severity) {
+    const diagnostics: Diagnostic[] = [];
+    for (const [path, token] of context.tokens) {
+      if (token.layer !== "component") continue;
+      for (const referenced of context.graph.dependencies.get(path) ?? []) {
+        if (context.tokens.get(referenced)?.layer !== "primitive") continue;
+        diagnostics.push({
+          ruleId: this.id,
+          severity,
+          tokenPath: path,
+          setName: context.tokenSets.get(path),
+          message:
+            `"${path}" (component) references primitive "${referenced}" directly — ` +
+            `route it through a semantic token`,
+        });
+      }
+    }
+    return diagnostics;
+  },
+};
+
+export const noRawValueInUpperLayers: LintRule = {
+  id: "no-raw-value-in-upper-layers",
+  defaultSeverity: "warn",
+  check(context, _options, severity) {
+    const diagnostics: Diagnostic[] = [];
+    for (const [path, token] of context.tokens) {
+      const layer = token.layer;
+      if (layer !== "semantic" && layer !== "component") continue;
+      // Any reference — alias, math expression, color function — registers a
+      // dependency; a token with none hardcodes its value.
+      const dependencies = context.graph.dependencies.get(path);
+      if (dependencies !== undefined && dependencies.size > 0) continue;
+      diagnostics.push({
+        ruleId: this.id,
+        severity,
+        tokenPath: path,
+        setName: context.tokenSets.get(path),
+        message: `"${path}" (${layer}) hardcodes a raw value — alias a lower-layer token instead`,
+      });
+    }
+    return diagnostics;
+  },
+};
+
 export const BUILTIN_RULES = [
   noBrokenReferences,
   noReferenceCycles,
@@ -231,4 +323,7 @@ export const BUILTIN_RULES = [
   contrast,
   noOrphanTokens,
   deprecatedUsage,
+  ownershipRequired,
+  layerSkip,
+  noRawValueInUpperLayers,
 ] as unknown as readonly LintRule<never>[];

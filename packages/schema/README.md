@@ -34,7 +34,10 @@ One Zod schema per `$type` (`colorValueSchema`, `dimensionValueSchema`, …), pl
 
 - `okeytokeyExtensionSchema` — decision-context metadata: `guidelines`, `context`,
   `decision { author, date, rationale, links }`, `lifecycle`
-  (`draft | active | deprecated | archived`), `replacedBy`, `lineage`
+  (`draft | active | deprecated | archived`), `replacedBy`, `lineage`,
+  `layer` (`primitive | semantic | component`), `owners` (user/team ids; `layer`
+  and `owners` are inheritable from ancestor groups — core computes the
+  effective values at parse time)
 
 ### Whole files (`file.ts`)
 

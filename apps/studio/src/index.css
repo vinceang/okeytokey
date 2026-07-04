@@ -576,6 +576,21 @@ a.sidebar-item {
   color: var(--text-tertiary);
 }
 
+/* Layer / owners metadata, next to the lifecycle badge. */
+.meta-badge {
+  display: inline-block;
+  max-width: 140px;
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font: 500 var(--text-xs) var(--font-sans);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* --- Editor grids ------------------------------------------------------------- */
 .editor-row {
   display: flex;

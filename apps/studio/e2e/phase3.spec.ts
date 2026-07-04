@@ -88,3 +88,21 @@ test("decision context edits persist through the undo stack", async ({ page }) =
   await page.getByTestId("undo").click(); // guidelines
   await expect(page.getByTestId("guidelines-input")).toHaveValue("");
 });
+
+test("layer and owners are editable; badges show in the inspector header", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("token-colors.blue.500").click();
+
+  await page.getByTestId("layer-select").selectOption("primitive");
+  await expect(page.getByTestId("layer-badge")).toContainText("primitive");
+
+  await page.getByTestId("owners-input").fill("@design-systems, @vince");
+  await page.getByTestId("owners-input").blur();
+  await expect(page.getByTestId("owners-badge")).toContainText("@design-systems, @vince");
+
+  // Undo removes each edit in turn.
+  await page.getByTestId("undo").click(); // owners
+  await expect(page.getByTestId("owners-badge")).toHaveCount(0);
+  await page.getByTestId("undo").click(); // layer
+  await expect(page.getByTestId("layer-badge")).toHaveCount(0);
+});

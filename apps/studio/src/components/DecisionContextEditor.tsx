@@ -6,17 +6,25 @@ import { useDocumentStore } from "../state/document-store.js";
 
 /**
  * Edits the com.okeytokey decision-context payload: guidelines, lifecycle,
- * replacedBy. (Decision records — author/date/rationale — are written on
- * deprecation flows and by future generators; freeform editing starts here.)
+ * replacedBy, layer, owners. (Decision records — author/date/rationale — are
+ * written on deprecation flows and by future generators; freeform editing
+ * starts here.) Layer and owners inherit from ancestor groups; inherited
+ * values show as hints and only explicit edits write to the token.
  */
 export function DecisionContextEditor({
   setName,
   path,
   meta,
+  inheritedLayer,
+  inheritedOwners,
 }: {
   setName: string;
   path: string;
   meta: OkeytokeyExtension | undefined;
+  /** Effective layer when the token declares none of its own. */
+  inheritedLayer?: OkeytokeyExtension["layer"];
+  /** Effective owners when the token declares none of its own. */
+  inheritedOwners?: readonly string[];
 }) {
   const execute = useDocumentStore((state) => state.execute);
 
@@ -54,6 +62,56 @@ export function DecisionContextEditor({
           />
         )}
       </Field>
+      <div className="editor-grid-2">
+        <Field label="Layer">
+          {(id) => (
+            <Select
+              id={id}
+              value={meta?.layer ?? ""}
+              data-testid="layer-select"
+              onChange={(event) => {
+                const value = event.target.value;
+                patch({
+                  layer: value === "" ? undefined : (value as OkeytokeyExtension["layer"]),
+                });
+              }}
+            >
+              <option value="">
+                {meta?.layer === undefined && inheritedLayer !== undefined
+                  ? `— (inherits ${inheritedLayer})`
+                  : "—"}
+              </option>
+              <option value="primitive">primitive</option>
+              <option value="semantic">semantic</option>
+              <option value="component">component</option>
+            </Select>
+          )}
+        </Field>
+        <Field label="Owners">
+          {(id) => (
+            <TextInput
+              id={id}
+              key={`${path}-owners-${(meta?.owners ?? []).join(",")}`}
+              defaultValue={(meta?.owners ?? []).join(", ")}
+              placeholder={
+                meta?.owners === undefined && inheritedOwners !== undefined
+                  ? `${inheritedOwners.join(", ")} (inherited)`
+                  : "@design-systems, @vince"
+              }
+              data-testid="owners-input"
+              onBlur={(event) => {
+                const next = event.target.value
+                  .split(",")
+                  .map((owner) => owner.trim())
+                  .filter((owner) => owner !== "");
+                if (next.join(",") !== (meta?.owners ?? []).join(",")) {
+                  patch({ owners: next.length > 0 ? next : undefined });
+                }
+              }}
+            />
+          )}
+        </Field>
+      </div>
       <div className="editor-grid-2">
         <Field label="Lifecycle">
           {(id) => (

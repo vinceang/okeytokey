@@ -88,6 +88,20 @@ export function Inspector({
             {token.ownType ? "" : " (inherited)"}
           </span>
           {meta?.lifecycle && <LifecycleBadge lifecycle={meta.lifecycle} />}
+          {token.layer && (
+            <span className="meta-badge" data-testid="layer-badge">
+              {token.layer}
+            </span>
+          )}
+          {token.owners && token.owners.length > 0 && (
+            <span
+              className="meta-badge"
+              data-testid="owners-badge"
+              title={`Owned by ${token.owners.join(", ")}`}
+            >
+              {token.owners.join(", ")}
+            </span>
+          )}
         </div>
       </header>
 
@@ -173,7 +187,13 @@ export function Inspector({
         )}
       </section>
 
-      <DecisionContextEditor setName={selection.set} path={token.pathString} meta={meta} />
+      <DecisionContextEditor
+        setName={selection.set}
+        path={token.pathString}
+        meta={meta}
+        inheritedLayer={token.layer}
+        inheritedOwners={token.owners}
+      />
 
       <UsagePanel path={token.pathString} resolver={resolver} />
 

@@ -67,3 +67,14 @@ export interface ContrastPair {
 export interface ContrastOptions {
   readonly pairs?: readonly ContrastPair[];
 }
+
+export interface OwnershipOptions {
+  /**
+   * CODEOWNERS-style ownership map from okeytokey.config.json: dot-path glob
+   * → owner identifiers. `*` matches one path segment, `**` any number
+   * (e.g. `"colors.**": ["@design-systems"]`). A token is owned when its
+   * effective `$extensions` owners (own or inherited from a group) are
+   * non-empty, or any glob here matches its path.
+   */
+  readonly owners?: Readonly<Record<string, readonly string[]>>;
+}

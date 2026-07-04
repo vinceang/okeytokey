@@ -158,6 +158,7 @@ export type {
   LintConfig,
   LintRule,
   NamingConventionOptions,
+  OwnershipOptions,
   RuleContext,
   RuleSetting,
   Severity,

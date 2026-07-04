@@ -33,6 +33,15 @@ describe("okeytokeyExtensionSchema", () => {
     expect(okeytokeyExtensionSchema.safeParse({ owner: "vince" }).success).toBe(false);
   });
 
+  it("accepts layer and owners; rejects unknown layers and empty owner ids", () => {
+    expect(
+      okeytokeyExtensionSchema.safeParse({ layer: "semantic", owners: ["@design-systems"] })
+        .success,
+    ).toBe(true);
+    expect(okeytokeyExtensionSchema.safeParse({ layer: "brand" }).success).toBe(false);
+    expect(okeytokeyExtensionSchema.safeParse({ owners: [""] }).success).toBe(false);
+  });
+
   it("rejects incomplete decisions and non-URL links", () => {
     expect(okeytokeyExtensionSchema.safeParse({ decision: { author: "v" } }).success).toBe(false);
     expect(

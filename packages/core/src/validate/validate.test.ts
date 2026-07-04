@@ -179,6 +179,121 @@ describe("deprecated-usage", () => {
   });
 });
 
+describe("ownership-required", () => {
+  const fixture = doc(`{
+    "colors": {
+      "$type": "color",
+      "500": { "$value": "#3b82f6" },
+      "600": { "$value": "#2563eb" }
+    },
+    "spacing": {
+      "$type": "dimension",
+      "$extensions": { "com.okeytokey": { "owners": ["@platform"] } },
+      "base": { "$value": "4px" }
+    },
+    "misc": { "ratio": { "$type": "number", "$value": 1.25 } }
+  }`);
+
+  it("is off by default", () => {
+    expect(byRule(lintDocument(fixture), "ownership-required")).toHaveLength(0);
+  });
+
+  it("reports one diagnostic per unowned top-level group", () => {
+    const diagnostics = lintDocument(fixture, {
+      rules: { "ownership-required": "warn" },
+    });
+    const unowned = byRule(diagnostics, "ownership-required");
+    // spacing is owned via the inherited group extension; colors + misc are not.
+    expect(unowned.map((diagnostic) => diagnostic.tokenPath).sort()).toEqual(["colors", "misc"]);
+    expect(unowned.find((d) => d.tokenPath === "colors")?.message).toContain("2 tokens");
+  });
+
+  it("config globs own paths CODEOWNERS-style (** spans segments, * one)", () => {
+    const diagnostics = lintDocument(fixture, {
+      rules: {
+        "ownership-required": [
+          "warn",
+          { owners: { "colors.**": ["@design"], "misc.*": ["@core"] } },
+        ],
+      },
+    });
+    expect(byRule(diagnostics, "ownership-required")).toHaveLength(0);
+  });
+
+  it("a glob with no owners does not own anything", () => {
+    const diagnostics = lintDocument(fixture, {
+      rules: { "ownership-required": ["warn", { owners: { "colors.**": [] } }] },
+    });
+    expect(byRule(diagnostics, "ownership-required").map((d) => d.tokenPath)).toContain("colors");
+  });
+});
+
+describe("layer-skip / no-raw-value-in-upper-layers", () => {
+  const layered = (button: string, action: string) =>
+    doc(`{
+      "colors": {
+        "$type": "color",
+        "$extensions": { "com.okeytokey": { "layer": "primitive" } },
+        "500": { "$value": "#3b82f6" }
+      },
+      "semantic": {
+        "$type": "color",
+        "$extensions": { "com.okeytokey": { "layer": "semantic" } },
+        "action": { "$value": ${JSON.stringify(action)} }
+      },
+      "button": {
+        "$type": "color",
+        "$extensions": { "com.okeytokey": { "layer": "component" } },
+        "bg": { "$value": ${JSON.stringify(button)} }
+      }
+    }`);
+
+  it("flags a component token referencing a primitive directly", () => {
+    const diagnostics = lintDocument(layered("{colors.500}", "{colors.500}"));
+    const skips = byRule(diagnostics, "layer-skip");
+    expect(skips).toHaveLength(1);
+    expect(skips[0]?.tokenPath).toBe("button.bg");
+    expect(skips[0]?.message).toContain('primitive "colors.500"');
+  });
+
+  it("component → semantic → primitive is clean", () => {
+    const diagnostics = lintDocument(layered("{semantic.action}", "{colors.500}"));
+    expect(byRule(diagnostics, "layer-skip")).toHaveLength(0);
+    expect(byRule(diagnostics, "no-raw-value-in-upper-layers")).toHaveLength(0);
+  });
+
+  it("flags hardcoded values in semantic/component layers, not primitives", () => {
+    const diagnostics = lintDocument(layered("#112233", "#445566"));
+    const raw = byRule(diagnostics, "no-raw-value-in-upper-layers");
+    expect(raw.map((d) => d.tokenPath).sort()).toEqual(["button.bg", "semantic.action"]);
+    // colors.500 (primitive) hardcodes by design — never flagged.
+    expect(raw.some((d) => d.tokenPath === "colors.500")).toBe(false);
+  });
+
+  it("color functions and math count as references, not raw values", () => {
+    const fixture = doc(`{
+      "colors": {
+        "$type": "color",
+        "$extensions": { "com.okeytokey": { "layer": "primitive" } },
+        "500": { "$value": "#3b82f6" }
+      },
+      "semantic": {
+        "$type": "color",
+        "$extensions": { "com.okeytokey": { "layer": "semantic" } },
+        "hover": { "$value": "darken({colors.500}, 0.1)" }
+      }
+    }`);
+    expect(byRule(lintDocument(fixture), "no-raw-value-in-upper-layers")).toHaveLength(0);
+  });
+
+  it("does nothing when no layer metadata exists", () => {
+    const fixture = doc('{ "a": { "$type": "color", "$value": "#fff" } }');
+    const diagnostics = lintDocument(fixture);
+    expect(byRule(diagnostics, "layer-skip")).toHaveLength(0);
+    expect(byRule(diagnostics, "no-raw-value-in-upper-layers")).toHaveLength(0);
+  });
+});
+
 describe("engine configuration", () => {
   it("severity overrides and off work", () => {
     const fixture = doc('{ "a": { "$type": "color", "$value": "{gone}" } }');

@@ -5,6 +5,7 @@ import {
   okeytokeyExtensionSchema,
   safeParseTokenFile,
   type DtcgTokenType,
+  type Layer,
   type OkeytokeyExtension,
 } from "@okeytokey/schema";
 
@@ -39,8 +40,15 @@ export interface TokenNode {
   readonly value: unknown;
   readonly description: string | undefined;
   readonly deprecated: boolean | string | undefined;
-  /** Parsed com.okeytokey extension metadata, if present and valid. */
+  /** Parsed com.okeytokey extension metadata declared on the token itself. */
   readonly okeytokey: OkeytokeyExtension | undefined;
+  /**
+   * Effective layer: the token's own, or the nearest ancestor group's
+   * (mirrors `$type` inheritance). Computed at index time, never serialized.
+   */
+  readonly layer: Layer | undefined;
+  /** Effective owners: the token's own, or the nearest ancestor group's. */
+  readonly owners: readonly string[] | undefined;
   /** The underlying ordered-JSON node. Do not mutate. */
   readonly raw: JsonMap;
 }
@@ -71,6 +79,12 @@ function readOkeytokeyExtension(node: JsonMap): OkeytokeyExtension | undefined {
   return result.success ? result.data : undefined;
 }
 
+/** The extension fields that flow down from ancestor groups. */
+interface InheritedMeta {
+  readonly layer: Layer | undefined;
+  readonly owners: readonly string[] | undefined;
+}
+
 function indexTokens(root: JsonMap): Map<string, TokenNode> {
   const tokens = new Map<string, TokenNode>();
 
@@ -78,10 +92,12 @@ function indexTokens(root: JsonMap): Map<string, TokenNode> {
     node: JsonMap,
     segments: readonly string[],
     inheritedType: DtcgTokenType | undefined,
+    inheritedMeta: InheritedMeta,
   ): void => {
     const rawType = node.get("$type");
     const ownType = typeof rawType === "string" && isDtcgTokenType(rawType) ? rawType : undefined;
     const effectiveType = ownType ?? inheritedType;
+    const ownMeta = readOkeytokeyExtension(node);
 
     if (node.has("$value")) {
       // Schema validation (done before indexing) guarantees effectiveType.
@@ -102,22 +118,28 @@ function indexTokens(root: JsonMap): Map<string, TokenNode> {
           typeof deprecated === "boolean" || typeof deprecated === "string"
             ? deprecated
             : undefined,
-        okeytokey: readOkeytokeyExtension(node),
+        okeytokey: ownMeta,
+        layer: ownMeta?.layer ?? inheritedMeta.layer,
+        owners: ownMeta?.owners ?? inheritedMeta.owners,
         raw: node,
       });
       return;
     }
 
+    const childMeta: InheritedMeta = {
+      layer: ownMeta?.layer ?? inheritedMeta.layer,
+      owners: ownMeta?.owners ?? inheritedMeta.owners,
+    };
     for (const [key, child] of node) {
       if (key.startsWith("$")) continue;
       const childMap = expectMap(child);
       if (childMap) {
-        walk(childMap, [...segments, key], effectiveType);
+        walk(childMap, [...segments, key], effectiveType, childMeta);
       }
     }
   };
 
-  walk(root, [], undefined);
+  walk(root, [], undefined, { layer: undefined, owners: undefined });
   return tokens;
 }
 

@@ -68,10 +68,12 @@ export {
 
 export {
   decisionSchema,
+  layerSchema,
   lifecycleSchema,
   lineageSchema,
   okeytokeyExtensionSchema,
   type Decision,
+  type Layer,
   type Lifecycle,
   type Lineage,
   type OkeytokeyExtension,

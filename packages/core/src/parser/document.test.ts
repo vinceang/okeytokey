@@ -56,6 +56,48 @@ describe("parseTokenSet", () => {
     expect(set.tokens.get("colors.900")?.okeytokey).toBeUndefined();
   });
 
+  it("inherits layer and owners from the nearest ancestor group; own values win", () => {
+    const set = parseTokenSet(
+      "global",
+      `{
+        "colors": {
+          "$type": "color",
+          "$extensions": { "com.okeytokey": { "layer": "primitive", "owners": ["@design"] } },
+          "500": { "$value": "#3b82f6" },
+          "special": {
+            "$extensions": { "com.okeytokey": { "owners": ["@brand"] } },
+            "hot": { "$value": "#ff0055" }
+          }
+        },
+        "semantic": {
+          "$type": "color",
+          "action": {
+            "$value": "{colors.500}",
+            "$extensions": { "com.okeytokey": { "layer": "semantic" } }
+          }
+        }
+      }`,
+    );
+    // Effective values inherit from the group; own extension stays own-only.
+    const inherited = set.tokens.get("colors.500");
+    expect(inherited?.layer).toBe("primitive");
+    expect(inherited?.owners).toEqual(["@design"]);
+    expect(inherited?.okeytokey).toBeUndefined();
+    // The nearest group's owners win; layer still flows from the grandparent.
+    const nested = set.tokens.get("colors.special.hot");
+    expect(nested?.layer).toBe("primitive");
+    expect(nested?.owners).toEqual(["@brand"]);
+    // Own fields always win; nothing inherited without an ancestor declaring it.
+    const own = set.tokens.get("semantic.action");
+    expect(own?.layer).toBe("semantic");
+    expect(own?.owners).toBeUndefined();
+    expect(own?.okeytokey).toEqual({ layer: "semantic" });
+    // Inheritance is computed, never written: serialization keeps exactly the
+    // three authored extension blocks.
+    const serialized = serializeTokenSet(set);
+    expect(serialized.match(/com\.okeytokey/g)).toHaveLength(3);
+  });
+
   it("throws TokenParseError with issues for invalid files", () => {
     try {
       parseTokenSet("bad", '{ "x": { "$value": "#fff" } }');

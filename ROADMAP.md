@@ -13,10 +13,15 @@ PRD), but these PRD commitments are missing, in priority order:
 
 1. **Governance epic** — the PRD's differentiator, largely unbuilt. Decision and
    design recorded in [ADR 0007](docs/adr/0007-git-native-governance.md):
-   - `owners` + `layer` fields in the `com.okeytokey` extension schema
-     (inheritable from group/set), and ownership globs in `okeytokey.config.json`
-   - Missing lint rules: `ownership-required`, `layer-skip`,
-     `no-raw-value-in-upper-layers` (6 of the PRD's 9 exist today)
+   - ~~`owners` + `layer` fields in the `com.okeytokey` extension schema
+     (inheritable from group/set), and ownership globs in `okeytokey.config.json`~~ —
+     shipped: schema fields, parser-level group inheritance (effective
+     `token.layer` / `token.owners`, mirroring `$type`), Decision Context
+     editing + inspector badges; ownership globs live in the
+     `ownership-required` rule options
+   - ~~Missing lint rules: `ownership-required`, `layer-skip`,
+     `no-raw-value-in-upper-layers`~~ — shipped (all 9 of the PRD's rules exist;
+     `ownership-required` is off by default until ownership is configured)
    - Protected paths (`requireReview`) → branch + PR routing in sync
      (subsumes the "PR-based sync flow" item under Later)
    - Per-token audit history: Git history × the semantic differ

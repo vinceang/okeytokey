@@ -8,6 +8,10 @@ import { z } from "zod";
 export const lifecycleSchema = z.enum(["draft", "active", "deprecated", "archived"]);
 export type Lifecycle = z.infer<typeof lifecycleSchema>;
 
+/** Architectural tier — powers layer-aware linting and docs organization. */
+export const layerSchema = z.enum(["primitive", "semantic", "component"]);
+export type Layer = z.infer<typeof layerSchema>;
+
 export const decisionSchema = z
   .object({
     author: z.string().min(1),
@@ -44,6 +48,10 @@ export const okeytokeyExtensionSchema = z
     replacedBy: z.string().optional(),
     /** Generated-from metadata when produced by a scale generator. */
     lineage: lineageSchema.optional(),
+    /** Architectural tier: primitive | semantic | component. Inheritable from the nearest ancestor group. */
+    layer: layerSchema.optional(),
+    /** User/team identifiers owning this token or group. Inheritable from the nearest ancestor group. */
+    owners: z.array(z.string().min(1)).optional(),
   })
   .strict();
 export type OkeytokeyExtension = z.infer<typeof okeytokeyExtensionSchema>;
