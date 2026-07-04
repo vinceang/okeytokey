@@ -41,7 +41,7 @@ test("native color picker commits and alias popover closes on outside click", as
   await page.goto("/");
 
   // The swatch hosts a native color input; setting it commits the value.
-  await page.getByTestId("token-colors.blue.500").click();
+  await page.getByTestId("token-colors.blue.500").locator(".okey-token-row").click();
   await page.getByTestId("color-picker").fill("#a1b2c3");
   await expect(page.getByTestId("resolved-preview")).toContainText("#a1b2c3");
   await expect(page.getByTestId("color-input")).toHaveValue("#a1b2c3");
@@ -59,7 +59,7 @@ test("theme switching changes resolution", async ({ page }) => {
   // With no theme, plain document order applies and the dark set (last) wins.
   // The light theme disables the dark set, restoring gray.50.
   await page.getByTestId("set-semantic").click();
-  await page.getByTestId("token-semantic.background").click();
+  await page.getByTestId("token-semantic.background").locator(".okey-token-row").click();
   await page.getByTestId("theme-light").click();
   await expect(page.getByTestId("resolved-preview")).toContainText("#f8fafc");
 

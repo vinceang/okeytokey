@@ -109,6 +109,26 @@ function restoreDocument(label: string, snapshot: TokenDocument): Command {
   };
 }
 
+/**
+ * Create `path` in `setName`, creating the set itself first when it doesn't
+ * exist — one undoable step. This is how a theme column heals itself: the
+ * theme references its override set by name, so writing into a deleted set
+ * simply brings it back.
+ */
+export function cmdCreateTokenInSet(setName: string, path: string, init: TokenInit): Command {
+  const label = `Override ${path} in ${setName}`;
+  return {
+    label,
+    run(document) {
+      const withTarget = document.sets.has(setName)
+        ? document
+        : addSet(document, emptySet(setName));
+      const next = withSet(withTarget, createToken(getSet(withTarget, setName), path, init));
+      return { document: next, inverse: restoreDocument(label, document) };
+    },
+  };
+}
+
 export function cmdRemoveSet(name: string): Command {
   return {
     label: `Delete set ${name}`,

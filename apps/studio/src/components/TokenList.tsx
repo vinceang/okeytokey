@@ -18,9 +18,10 @@ import { isReference, referencePath } from "@okeytokey/schema";
 import { ColorSwatch, ReferencePill, TokenRow } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
+import { CellColorPopover } from "./CellColorPopover.js";
 import {
   cmdAddSet,
-  cmdCreateToken,
+  cmdCreateTokenInSet,
   cmdDeleteToken,
   cmdRenameToken,
   cmdSetTokenValue,
@@ -112,18 +113,16 @@ function definingSet(document: TokenDocument, theme: Theme, path: string): strin
 
 /**
  * Where a new override for this theme lands: the highest-precedence set in
- * the theme's resolution order that the base theme does NOT resolve — for a
- * dark theme layered over light, that's the `dark` set. When the surviving
- * stacks fully overlap (e.g. the theme's own set was deleted), there is no
- * set that affects only this theme — return undefined rather than silently
- * writing into a shared set and changing every theme at once.
+ * the theme's declared resolution order that the base theme does NOT
+ * resolve — for a dark theme layered over light, that's the `dark` set. The
+ * set is matched by NAME, whether or not it currently exists in the
+ * document: writing into a deleted override set recreates it (the theme
+ * still references the name), which is how a stale theme column heals.
+ * Returns undefined only when the stacks fully overlap — then no set could
+ * affect just this theme, and writing anywhere would change every theme.
  */
-function overrideSet(
-  document: TokenDocument,
-  theme: Theme,
-  baseTheme: Theme | undefined,
-): string | undefined {
-  const order = resolutionOrder(theme).filter((name) => document.sets.has(name));
+function overrideSet(theme: Theme, baseTheme: Theme | undefined): string | undefined {
+  const order = resolutionOrder(theme);
   const baseOrder = new Set(baseTheme ? resolutionOrder(baseTheme) : []);
   for (let index = order.length - 1; index >= 0; index--) {
     const name = order[index];
@@ -155,6 +154,7 @@ function ValueCell({
 }) {
   const execute = useDocumentStore((state) => state.execute);
   const [error, setError] = useState<string>();
+  const cellRef = useRef<HTMLDivElement>(null);
 
   const definer = column.theme ? definingSet(document, column.theme, path) : fallbackSet.name;
   const token = definer !== undefined ? document.sets.get(definer)?.tokens.get(path) : undefined;
@@ -180,16 +180,16 @@ function ValueCell({
 
   const raw = token.value;
   // Inline editing covers string/number raw values; composites (typography,
-  // shadow objects) keep their editors in the inspector.
+  // shadow objects) keep their editors in the inspector. Color cells open a
+  // Figma-style popover instead of a bare text input.
   const editable = typeof raw === "string" || typeof raw === "number";
+  const isColorCell = editable && token.type === "color";
 
-  const commit = (next: string) => {
+  /** Route a value to the right set (see the treegrid override rules). */
+  const commitValue = (next: string): boolean => {
     setError(undefined);
     const trimmed = next.trim();
-    if (trimmed === "" || trimmed === String(raw)) {
-      onStopEdit();
-      return;
-    }
+    if (trimmed === "" || trimmed === String(raw)) return true;
     try {
       if (isBase || overridden) {
         // Edit where the value already lives.
@@ -197,20 +197,27 @@ function ValueCell({
       } else {
         // Inherited cell in a non-base theme (so column.theme is set):
         // create a sparse override in the theme's own set — only this
-        // theme changes.
-        const target = overrideSet(document, column.theme, baseTheme);
+        // theme changes. If that set was deleted, it's recreated in the
+        // same undoable step.
+        const target = overrideSet(column.theme, baseTheme);
         if (target === undefined) {
           throw new Error(
             `Theme "${column.label}" has no set of its own to hold an override — ` +
-              `its override set may have been deleted. Check the theme's sets in its ⋮ menu.`,
+              `every set in its stack is shared with the base theme. ` +
+              `Add one in the theme's ⋮ menu.`,
           );
         }
-        execute(cmdCreateToken(target, path, { type: token.type, value: trimmed }));
+        execute(cmdCreateTokenInSet(target, path, { type: token.type, value: trimmed }));
       }
-      onStopEdit();
+      return true;
     } catch (commitError) {
       setError(commitError instanceof Error ? commitError.message : String(commitError));
+      return false;
     }
+  };
+
+  const commit = (next: string) => {
+    if (commitValue(next)) onStopEdit();
   };
 
   const reset = () => {
@@ -218,7 +225,7 @@ function ValueCell({
     execute(cmdDeleteToken(definer, path));
   };
 
-  if (editing && editable) {
+  if (editing && editable && !isColorCell) {
     return (
       <div
         role="gridcell"
@@ -272,8 +279,9 @@ function ValueCell({
 
   return (
     <div
+      ref={cellRef}
       role="gridcell"
-      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}${focused ? " token-cell--focused" : ""}`}
+      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}${focused ? " token-cell--focused" : ""}${editing && isColorCell ? " token-cell--editing" : ""}${error !== undefined ? " token-cell--error" : ""}`}
       data-testid={`cell-${path}-${column.key}`}
       title={resolved ? `${title} — resolves to ${String(resolved.value)}` : title}
       onClick={(event) => {
@@ -303,6 +311,21 @@ function ValueCell({
         >
           ↺
         </button>
+      )}
+      {editing && isColorCell && (
+        <CellColorPopover
+          anchor={cellRef}
+          raw={String(raw)}
+          seed={
+            resolved && typeof resolved.value === "string" && isColor(resolved.value)
+              ? resolved.value
+              : "#000000"
+          }
+          path={path}
+          resolver={column.resolver}
+          onApply={commitValue}
+          onClose={onStopEdit}
+        />
       )}
     </div>
   );

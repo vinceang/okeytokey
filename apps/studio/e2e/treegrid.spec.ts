@@ -36,11 +36,18 @@ test("a dark-set override renders per column with different values", async ({ pa
 
 test("editing a base cell edits in place; the inherited column follows", async ({ page }) => {
   await page.goto("/");
+  // Color cells open a Figma-style popover: picker, text, OKLCH sliders.
   await page.getByTestId("cell-colors.blue.500-light").click();
-  await page.getByTestId("cell-input-colors.blue.500-light").fill("#ff0000");
+  const popover = page.getByTestId("cell-popover");
+  await expect(popover).toBeVisible();
+  await popover.getByTestId("color-input").fill("#ff0000");
   await page.keyboard.press("Enter");
 
+  // Commits apply live; the popover stays open until Escape/outside click.
   await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#ff0000");
+  await page.keyboard.press("Escape");
+  await expect(popover).toHaveCount(0);
+
   // Dark inherits the base edit — still dimmed, same value.
   const dark = page.getByTestId("cell-colors.blue.500-dark");
   await expect(dark).toContainText("#ff0000");
@@ -48,6 +55,14 @@ test("editing a base cell edits in place; the inherited column follows", async (
 
   await page.getByTestId("undo").click();
   await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#3b82f6");
+
+  // Non-color cells keep the plain inline input.
+  await page.getByTestId("cell-spacing.base-light").click();
+  await page.getByTestId("cell-input-spacing.base-light").fill("6px");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("cell-spacing.base-light")).toContainText("6px");
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("cell-spacing.base-light")).toContainText("4px");
 });
 
 test("editing an inherited dark cell creates a sparse override — only dark changes", async ({
@@ -57,8 +72,9 @@ test("editing an inherited dark cell creates a sparse override — only dark cha
   await expect(page.getByTestId("set-dark")).toContainText("2"); // sparse: 2 overrides
 
   await page.getByTestId("cell-colors.blue.500-dark").click();
-  await page.getByTestId("cell-input-colors.blue.500-dark").fill("#112233");
+  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#112233");
   await page.keyboard.press("Enter");
+  await page.keyboard.press("Escape");
 
   const dark = page.getByTestId("cell-colors.blue.500-dark");
   await expect(dark).toContainText("#112233");
@@ -92,11 +108,33 @@ test("reset-to-inherited removes an override, undoably; Escape cancels an edit",
   await page.getByTestId("undo").click();
   await expect(dark).toContainText("colors.gray.900");
 
-  // Escape cancels without committing.
+  // Escape closes the popover without committing pending text.
   await page.getByTestId("cell-semantic.action-light").click();
-  await page.getByTestId("cell-input-semantic.action-light").fill("#000000");
+  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#000000");
   await page.keyboard.press("Escape");
+  await expect(page.getByTestId("cell-popover")).toHaveCount(0);
   await expect(page.getByTestId("cell-semantic.action-light")).toContainText("colors.blue.500");
+});
+
+test("the color popover links a cell to another token (Figma's Libraries)", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("cell-colors.blue.600-dark").click();
+  const popover = page.getByTestId("cell-popover");
+  await popover.getByTestId("cell-popover-reference").click();
+  await popover.getByPlaceholder(/Search/).fill("gray.900");
+  await popover.getByTestId("alias-option-colors.gray.900").click();
+
+  // The dark cell now aliases gray.900 as a dark-set override; the pill and
+  // a reference note render in the popover on the next open.
+  await page.keyboard.press("Escape");
+  const dark = page.getByTestId("cell-colors.blue.600-dark");
+  await expect(dark).toContainText("colors.gray.900");
+  await expect(dark).toHaveAttribute("title", /Overridden in dark/);
+  await expect(page.getByTestId("cell-colors.blue.600-light")).toContainText("#2563eb");
+
+  await dark.click();
+  await expect(popover.locator(".cell-popover-reference")).toContainText("colors.gray.900");
+  await page.keyboard.press("Escape");
 });
 
 test("＋ mode adds a set and a theme column; its cells take sparse overrides", async ({ page }) => {
@@ -113,8 +151,9 @@ test("＋ mode adds a set and a theme column; its cells take sparse overrides", 
 
   // Editing a cell in the new column writes into the new set.
   await page.getByTestId("cell-colors.gray.50-high-contrast").click();
-  await page.getByTestId("cell-input-colors.gray.50-high-contrast").fill("#ffffff");
+  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#ffffff");
   await page.keyboard.press("Enter");
+  await page.keyboard.press("Escape");
   await expect(page.getByTestId("cell-colors.gray.50-high-contrast")).toHaveAttribute(
     "title",
     /Overridden in high-contrast/,
@@ -148,16 +187,19 @@ test("the footer ＋ New token opens the creation dialog", async ({ page }) => {
 
 test("keyboard: arrows move rows and columns, Enter edits the focused cell", async ({ page }) => {
   await page.goto("/");
-  await page.getByTestId("token-colors.blue.500").click();
+  // Click the name cell (clicking a value cell would open its editor).
+  await page.getByTestId("token-colors.blue.500").locator(".okey-token-row").click();
   await page.getByTestId("token-list").focus();
 
-  // → moves the column focus onto the light cell; Enter opens its editor.
+  // → moves the column focus onto the light cell; Enter opens its editor
+  // (the color popover, since this is a color cell).
   await page.keyboard.press("ArrowRight");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toHaveClass(/token-cell--focused/);
   await page.keyboard.press("Enter");
-  await page.getByTestId("cell-input-colors.blue.500-light").fill("#00ff00");
+  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#00ff00");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#00ff00");
+  await page.keyboard.press("Escape");
 
   // ↓ still moves the row selection; the treegrid role is exposed.
   await page.getByTestId("token-list").focus();
@@ -166,7 +208,7 @@ test("keyboard: arrows move rows and columns, Enter edits the focused cell", asy
   await expect(page.getByRole("treegrid", { name: "Tokens" })).toBeVisible();
 });
 
-test("a theme whose set was deleted still exports (with a warning) and refuses shared-set overrides", async ({
+test("a theme whose set was deleted still exports (with a warning) and heals on cell edit", async ({
   page,
 }) => {
   await page.goto("/");
@@ -188,21 +230,35 @@ test("a theme whose set was deleted still exports (with a warning) and refuses s
   await expect(preview).toContainText("--colors-blue-500: #3b82f6;");
   await page.keyboard.press("Escape");
 
-  // Editing a dark cell can't silently write into a set shared with light —
-  // it errors instead of changing both themes at once.
+  // Editing a dark cell heals the theme: the deleted override set is
+  // recreated (by name) with the override in it — one undoable step, and
+  // light is untouched.
   await page.getByTestId("cell-colors.blue.500-dark").click();
-  await page.getByTestId("cell-input-colors.blue.500-dark").fill("#112233");
+  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#112233");
   await page.keyboard.press("Enter");
-  await expect(page.getByTestId("cell-colors.blue.500-dark")).toHaveClass(/token-cell--error/);
   await page.keyboard.press("Escape");
+
+  const dark = page.getByTestId("cell-colors.blue.500-dark");
+  await expect(dark).toContainText("#112233");
+  await expect(dark).toHaveAttribute("title", /Overridden in dark/);
+  await expect(page.getByTestId("set-dark")).toBeVisible();
+  await expect(page.getByTestId("set-dark")).toContainText("1");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#3b82f6");
 
-  // Undoing the delete restores the set; the theme snaps back to life.
-  await page.getByTestId("undo").click();
+  // The export warning is gone — the theme is whole again.
   await page.getByTestId("open-export").click();
   await page.getByTestId("export-theme").selectOption("dark");
   await expect(preview).not.toContainText("missing set");
-  await expect(preview).toContainText("--semantic-background: #0f172a;");
+  await expect(preview).toContainText("--colors-blue-500: #112233;");
+  await page.keyboard.press("Escape");
+
+  // One undo removes set and override together (back to the stale state);
+  // a second restores the original deletion's snapshot.
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("set-dark")).toHaveCount(0);
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("set-dark")).toBeVisible();
+  await expect(page.getByTestId("set-dark")).toContainText("2");
 });
 
 test("collapsing a group folds its rows; cells follow the filter's flat view", async ({ page }) => {

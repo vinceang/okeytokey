@@ -27,7 +27,7 @@ test("scale generator fills missing steps deterministically, undoable", async ({
 
   // Generated tokens carry lineage; the inspector shows the badge-less token
   // resolving to a real color.
-  await page.getByTestId("token-colors.blue.700").click();
+  await page.getByTestId("token-colors.blue.700").locator(".okey-token-row").click();
   await expect(page.getByTestId("resolved-preview")).toContainText("#");
 
   // One undo removes the whole generation.
@@ -81,7 +81,7 @@ test("a flat color token becomes a scale seed: rename + ramp, references follow,
   await page.getByTestId("scale-apply").click();
 
   // The flat token became a full ramp with the seed preserved at 500.
-  await page.getByTestId("token-colors.red.500").click();
+  await page.getByTestId("token-colors.red.500").locator(".okey-token-row").click();
   await expect(page.getByTestId("color-input")).toHaveValue("#ff0000");
   await expect(page.getByTestId("token-colors.red.900")).toBeVisible();
 
