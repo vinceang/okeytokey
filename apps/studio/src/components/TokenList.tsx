@@ -28,8 +28,10 @@ import {
   cmdAddSet,
   cmdCreateTokenInSet,
   cmdDeleteToken,
+  cmdDuplicateToken,
   cmdRenameToken,
   cmdSetTokenValue,
+  nextDuplicatePath,
 } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
@@ -376,6 +378,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
   const select = useUiStore((state) => state.select);
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
   const openDialog = useUiStore((state) => state.openDialog);
+  const openNewTokenAt = useUiStore((state) => state.openNewTokenAt);
 
   const execute = useDocumentStore((state) => state.execute);
   const [dropTarget, setDropTarget] = useState<string>();
@@ -494,7 +497,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
   // Inline rename (double-click a name): the rename-refactor retargets every
   // reference; one undo reverses it. Under a filter, rows show full paths and
   // the input edits the full path; otherwise just the leaf segment.
-  const commitRename = (path: string, input: string) => {
+  const commitRename = (path: string, input: string, isGroup = false) => {
     setRenaming(undefined);
     const next = input.trim();
     if (next === "") return;
@@ -503,7 +506,20 @@ export function TokenList({ set, resolver }: TokenListProps) {
     if (nextPath === path) return;
     try {
       execute(cmdRenameToken(path, nextPath));
-      select({ set: set.name, path: nextPath });
+      // A group path never selects a token; leave the selection where it was.
+      if (!isGroup) select({ set: set.name, path: nextPath });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  // Duplicate a token to a fresh `-copy` sibling and select the copy. The new
+  // path is computed the same way the command computes it, so selection lands.
+  const duplicate = (path: string) => {
+    const target = nextDuplicatePath(set, path);
+    try {
+      execute(cmdDuplicateToken(set.name, path));
+      select({ set: set.name, path: target });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : String(error));
     }
@@ -808,22 +824,100 @@ export function TokenList({ set, resolver }: TokenListProps) {
                   {...dropTargetProps(row.path)}
                 >
                   <div role="gridcell" aria-colspan={columns.length + 1} className="group-cell">
-                    <button
-                      type="button"
-                      className="group-row"
-                      style={{
-                        paddingLeft: `calc(var(--space-3) + ${String(row.depth)} * var(--space-4))`,
-                      }}
-                      onClick={() => {
-                        toggleCollapsed(row.path);
-                      }}
-                      data-testid={`group-${row.path}`}
-                    >
-                      <span className={`chevron${row.collapsed ? " chevron--collapsed" : ""}`}>
-                        ▼
-                      </span>
-                      {row.name}
-                    </button>
+                    {renaming === row.path ? (
+                      <div
+                        className="token-cell token-cell--editing"
+                        style={{
+                          paddingLeft: `calc(var(--space-3) + ${String(row.depth)} * var(--space-4))`,
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                      >
+                        <input
+                          className="token-cell-input"
+                          defaultValue={row.name}
+                          autoFocus
+                          aria-label={`Rename group ${row.path}`}
+                          data-testid={`rename-input-${row.path}`}
+                          onFocus={(event) => {
+                            event.target.select();
+                          }}
+                          onBlur={(event) => {
+                            commitRename(row.path, event.target.value, true);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter")
+                              commitRename(row.path, event.currentTarget.value, true);
+                            if (event.key === "Escape") setRenaming(undefined);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="group-row"
+                          style={{
+                            paddingLeft: `calc(var(--space-3) + ${String(row.depth)} * var(--space-4))`,
+                          }}
+                          onClick={() => {
+                            toggleCollapsed(row.path);
+                          }}
+                          data-testid={`group-${row.path}`}
+                        >
+                          <span className={`chevron${row.collapsed ? " chevron--collapsed" : ""}`}>
+                            ▼
+                          </span>
+                          {row.name}
+                        </button>
+                        <RowMenu
+                          label={`Actions for group ${row.path}`}
+                          testId={`node-menu-${row.path}`}
+                        >
+                          {(close) => (
+                            <>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                className="row-menu-item"
+                                data-testid={`group-new-subgroup-${row.path}`}
+                                onClick={() => {
+                                  close();
+                                  openNewTokenAt(row.path, "subgroup");
+                                }}
+                              >
+                                New subgroup…
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                className="row-menu-item"
+                                data-testid={`group-new-token-${row.path}`}
+                                onClick={() => {
+                                  close();
+                                  openNewTokenAt(row.path, "token");
+                                }}
+                              >
+                                New token…
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                className="row-menu-item"
+                                data-testid={`group-rename-${row.path}`}
+                                onClick={() => {
+                                  close();
+                                  setRenaming(row.path);
+                                }}
+                              >
+                                Rename group…
+                              </button>
+                            </>
+                          )}
+                        </RowMenu>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -873,19 +967,56 @@ export function TokenList({ set, resolver }: TokenListProps) {
                       />
                     </div>
                   ) : (
-                    <TokenRow
-                      name={row.name}
-                      type={token.type}
-                      deprecated={token.deprecated !== undefined && token.deprecated !== false}
-                      selected={selection?.set === set.name && selection.path === token.pathString}
-                      indent={row.depth}
-                      onSelect={() => {
-                        select({ set: set.name, path: token.pathString });
-                      }}
-                      onDoubleClick={() => {
-                        setRenaming(token.pathString);
-                      }}
-                    />
+                    <>
+                      <TokenRow
+                        name={row.name}
+                        type={token.type}
+                        deprecated={token.deprecated !== undefined && token.deprecated !== false}
+                        selected={
+                          selection?.set === set.name && selection.path === token.pathString
+                        }
+                        indent={row.depth}
+                        onSelect={() => {
+                          select({ set: set.name, path: token.pathString });
+                        }}
+                        onDoubleClick={() => {
+                          setRenaming(token.pathString);
+                        }}
+                      />
+                      <RowMenu
+                        label={`Actions for ${token.pathString}`}
+                        testId={`node-menu-${token.pathString}`}
+                      >
+                        {(close) => (
+                          <>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="row-menu-item"
+                              data-testid={`token-rename-${token.pathString}`}
+                              onClick={() => {
+                                close();
+                                setRenaming(token.pathString);
+                              }}
+                            >
+                              Rename token…
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="row-menu-item"
+                              data-testid={`token-duplicate-${token.pathString}`}
+                              onClick={() => {
+                                close();
+                                duplicate(token.pathString);
+                              }}
+                            >
+                              Duplicate token
+                            </button>
+                          </>
+                        )}
+                      </RowMenu>
+                    </>
                   )}
                 </div>
                 {columns.map((column, index) => (

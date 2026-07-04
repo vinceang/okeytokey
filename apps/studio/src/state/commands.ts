@@ -70,6 +70,37 @@ export function cmdSetTokenValue(setName: string, path: string, value: unknown):
   return setCommand(`Edit ${path}`, setName, (set) => setTokenValue(set, path, value));
 }
 
+/**
+ * The path a duplicate of `path` would take: a fresh `-copy` sibling, bumped
+ * (`-copy-2`, `-copy-3`, …) until it's free. Deterministic, so the caller can
+ * predict the new path to select it without threading it back out of the run.
+ */
+export function nextDuplicatePath(set: TokenSet, path: string): string {
+  const dot = path.lastIndexOf(".");
+  const prefix = dot === -1 ? "" : path.slice(0, dot + 1);
+  const leaf = path.slice(dot + 1);
+  let candidate = `${prefix}${leaf}-copy`;
+  for (let n = 2; set.tokens.has(candidate); n++) {
+    candidate = `${prefix}${leaf}-copy-${String(n)}`;
+  }
+  return candidate;
+}
+
+/** Duplicate a token to a fresh `-copy` sibling — type, value, and description carried. */
+export function cmdDuplicateToken(setName: string, path: string): Command {
+  return setCommand(`Duplicate ${path}`, setName, (set) => {
+    const token = set.tokens.get(path);
+    if (!token) {
+      throw new RangeError(`Token ${JSON.stringify(path)} does not exist`);
+    }
+    return createToken(set, nextDuplicatePath(set, path), {
+      type: token.type,
+      value: token.value,
+      description: token.description,
+    });
+  });
+}
+
 export function cmdSetTokenMeta(setName: string, path: string, patch: TokenMetaPatch): Command {
   return setCommand(`Edit ${path} metadata`, setName, (set) => setTokenMeta(set, path, patch));
 }

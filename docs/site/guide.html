@@ -204,6 +204,15 @@
         and the new token adopts its type. This is the fast path for semantic tokens.
       </li>
     </ul>
+    <p>
+      Every row also carries a <strong>⋮</strong> menu (revealed on hover, right next to the name).
+      On a <strong>group</strong>: <em>New token…</em> and <em>New subgroup…</em> open the dialog
+      with the group's path locked in as a read-only prefix — you only type the new leaf — plus
+      <em>Rename group…</em>. On a <strong>token</strong>: <em>Rename token…</em> and
+      <em>Duplicate token</em> (a <code>-copy</code> sibling carrying the value, type, and
+      description). Renaming a group cascades to every child and retargets every reference that
+      pointed into it, and a single <kbd>⌘Z</kbd> reverses the whole refactor.
+    </p>
     <p>Select any token to edit it in the right-hand inspector:</p>
     <ul>
       <li>

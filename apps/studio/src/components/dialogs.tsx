@@ -144,15 +144,23 @@ export function NewTokenDialog({
   setName,
   resolver,
   onClose,
+  parentPath,
+  intent = "token",
 }: {
   setName: string;
   resolver: Resolver;
   onClose: () => void;
+  /** When set (opened from a group's ⋮ menu), the parent path is read-only. */
+  parentPath?: string;
+  intent?: "token" | "subgroup";
 }) {
   const document = useDocumentStore((state) => state.document);
   const execute = useDocumentStore((state) => state.execute);
   const select = useUiStore((state) => state.select);
-  const [path, setPath] = useState("");
+  // The full dot path is the source of truth; when scoped to a group the prefix
+  // is fixed and only the trailing segment(s) are editable.
+  const prefix = parentPath !== undefined ? `${parentPath}.` : "";
+  const [path, setPath] = useState(prefix);
   const [type, setType] = useState<DtcgTokenType>("color");
   const [typeTouched, setTypeTouched] = useState(false);
   const [value, setValue] = useState(DEFAULT_VALUES.color ?? "");
@@ -208,6 +216,12 @@ export function NewTokenDialog({
     return formatColor(parseColor(value), "hex").slice(0, 7);
   }, [type, value]);
 
+  // The editable portion (everything after a fixed group prefix, or the whole
+  // path when unscoped), and the exact path a create would land on.
+  const leaf = path.startsWith(prefix) ? path.slice(prefix.length) : path;
+  const targetPath = parentPath !== undefined ? `${parentPath}.${leaf.trim()}` : path.trim();
+  const canCreate = (parentPath !== undefined ? leaf.trim() : path.trim()) !== "";
+
   const onPathChange = (nextPath: string) => {
     setPath(nextPath);
     if (typeTouched) return;
@@ -222,36 +236,69 @@ export function NewTokenDialog({
 
   const create = () => {
     try {
-      execute(
-        cmdCreateToken(setName, path.trim(), { type, value: parseInitialValue(type, value) }),
-      );
-      select({ set: setName, path: path.trim() });
+      execute(cmdCreateToken(setName, targetPath, { type, value: parseInitialValue(type, value) }));
+      select({ set: setName, path: targetPath });
       onClose();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : String(createError));
     }
   };
 
+  const title =
+    parentPath !== undefined
+      ? `${intent === "subgroup" ? "New subgroup" : "New token"} in ${parentPath}`
+      : `New token in ${setName}`;
+
   return (
-    <Dialog title={`New token in ${setName}`} onClose={onClose}>
-      <Field label="Path">
-        {(id) => (
-          <TextInput
-            id={id}
-            mono
-            autoFocus
-            placeholder="colors.brand.500"
-            value={path}
-            data-testid="new-token-path"
-            onChange={(event) => {
-              onPathChange(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && path.trim() !== "") create();
-            }}
-          />
-        )}
+    <Dialog title={title} onClose={onClose}>
+      <Field
+        label={intent === "subgroup" && parentPath !== undefined ? "Subgroup + token" : "Path"}
+      >
+        {(id) =>
+          parentPath !== undefined ? (
+            <div className="path-with-prefix">
+              <span className="path-prefix" data-testid="new-token-path-prefix">
+                {prefix}
+              </span>
+              <TextInput
+                id={id}
+                mono
+                autoFocus
+                placeholder={intent === "subgroup" ? "hover.default" : "500"}
+                value={leaf}
+                data-testid="new-token-path"
+                onChange={(event) => {
+                  onPathChange(`${prefix}${event.target.value}`);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && canCreate) create();
+                }}
+              />
+            </div>
+          ) : (
+            <TextInput
+              id={id}
+              mono
+              autoFocus
+              placeholder="colors.brand.500"
+              value={path}
+              data-testid="new-token-path"
+              onChange={(event) => {
+                onPathChange(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && canCreate) create();
+              }}
+            />
+          )
+        }
       </Field>
+      {intent === "subgroup" && parentPath !== undefined && (
+        <p className="field-hint" data-testid="new-token-subgroup-hint">
+          A subgroup appears once it holds a token — name both with a dot, e.g.{" "}
+          <code>hover.default</code>.
+        </p>
+      )}
       <Field label="Type">
         {(id) => (
           <Select
@@ -346,7 +393,7 @@ export function NewTokenDialog({
                 setValue(event.target.value);
               }}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && path.trim() !== "") create();
+                if (event.key === "Enter" && canCreate) create();
               }}
             />
             {type === "color" && (
@@ -398,7 +445,7 @@ export function NewTokenDialog({
         <div className="alias-picker alias-picker--inline">
           <AliasPicker
             resolver={resolver}
-            excludePath={path.trim()}
+            excludePath={targetPath}
             onPick={(target) => {
               setValue(makeReference(target));
               if (!typeTouched) {
@@ -418,12 +465,7 @@ export function NewTokenDialog({
         <Button variant="ghost" onClick={onClose}>
           Cancel
         </Button>
-        <Button
-          variant="primary"
-          disabled={path.trim() === ""}
-          onClick={create}
-          data-testid="create-token"
-        >
+        <Button variant="primary" disabled={!canCreate} onClick={create} data-testid="create-token">
           Create
         </Button>
       </footer>

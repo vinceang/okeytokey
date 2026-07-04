@@ -35,6 +35,7 @@ export function App() {
   const setFilter = useUiStore((state) => state.setFilter);
   const dialog = useUiStore((state) => state.dialog);
   const openDialog = useUiStore((state) => state.openDialog);
+  const newTokenContext = useUiStore((state) => state.newTokenContext);
 
   const resolver = useResolver();
 
@@ -160,6 +161,8 @@ export function App() {
         <NewTokenDialog
           setName={currentSet.name}
           resolver={resolver}
+          parentPath={newTokenContext?.parentPath}
+          intent={newTokenContext?.intent}
           onClose={() => {
             openDialog(undefined);
           }}

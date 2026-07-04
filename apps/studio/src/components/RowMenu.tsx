@@ -49,7 +49,7 @@ export function RowMenu({
   };
 
   return (
-    <div className="row-menu" ref={wrapRef}>
+    <div className="row-menu" ref={wrapRef} data-open={open}>
       <Button
         variant="ghost"
         aria-haspopup="menu"
