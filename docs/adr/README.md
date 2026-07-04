@@ -18,3 +18,7 @@ numbered, with Status / Context / Decision / Consequences sections.
 - [0006 — AI proposal contract and the deterministic boundary](0006-ai-proposal-contract.md):
   AI proposes / okeytokey proves, operation vocabulary mirroring core, provider
   abstraction with contract tests, compute-vs-judgment rule (Phase 7)
+- [0007 — Git-native governance](0007-git-native-governance.md): ownership and
+  layer as metadata, protected-path PR routing, audit history and releases
+  derived from Git — no separate approvals backend (accepted, implementation
+  pending)

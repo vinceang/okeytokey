@@ -2,7 +2,35 @@
 
 v1 (phases 0–6) is complete — see the status table in [README.md](README.md) and the
 decisions in [docs/adr/](docs/adr/). This file records what's deliberately deferred,
-so it doesn't live only in commit messages.
+so it doesn't live only in commit messages. The product source of truth is the
+revised PRD at [docs/prd.md](docs/prd.md).
+
+## Gap analysis vs the revised PRD (2026-07)
+
+A code-level audit against [docs/prd.md](docs/prd.md). Phases 0–6 are delivered
+(and exceeded in places — treegrid, scale generators, Phase 7 AI are beyond the
+PRD), but these PRD commitments are missing, in priority order:
+
+1. **Governance epic** — the PRD's differentiator, largely unbuilt. Decision and
+   design recorded in [ADR 0007](docs/adr/0007-git-native-governance.md):
+   - `owners` + `layer` fields in the `com.okeytokey` extension schema
+     (inheritable from group/set), and ownership globs in `okeytokey.config.json`
+   - Missing lint rules: `ownership-required`, `layer-skip`,
+     `no-raw-value-in-upper-layers` (6 of the PRD's 9 exist today)
+   - Protected paths (`requireReview`) → branch + PR routing in sync
+     (subsumes the "PR-based sync flow" item under Later)
+   - Per-token audit history: Git history × the semantic differ
+   - Releases: tag a snapshot, auto-changelog from diff + impact analysis,
+     rollback as a dry-run diff
+2. **CLI `lint` + `diff <ref>`** — the PRD wants validation and impact analysis
+   in CI/PR checks; the CLI only ships `build`. Engines exist; small.
+3. **Determinism enforcement** — outputs look deterministic but the PRD's
+   "build twice, byte-identical" snapshot test doesn't exist yet. Tiny.
+4. **Docs generator output target** — render the token graph (guidelines,
+   rationale, owners, lifecycle badges, per-theme resolved values, contrast
+   results) as a static site. The feature that makes Decision Context visible
+   to people who never open the editor. Do after governance metadata exists.
+5. **Lint configuration UI** — already tracked under Later.
 
 ## Near-term
 
@@ -71,4 +99,5 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
   dedicated mapping pass with a report.
 - **PR-based sync flow** — `createBranch` + `openPullRequest` exist on the provider;
   the studio always pushes to the configured branch. A "propose changes as PR"
-  toggle would suit protected branches.
+  toggle would suit protected branches. Superseded by the governance epic's
+  protected-path PR routing (gap analysis item 1, ADR 0007).
