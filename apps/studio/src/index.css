@@ -269,6 +269,22 @@ a.sidebar-item {
   text-overflow: ellipsis;
 }
 
+/* The swatch is its own button: click it for the picker, the text for inline edit. */
+.token-cell-swatch {
+  display: inline-flex;
+  flex: none;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.token-cell-swatch:focus-visible {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 1px;
+}
+
 .token-cell--editable {
   cursor: text;
 }

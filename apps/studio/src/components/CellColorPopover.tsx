@@ -7,6 +7,7 @@ import { Button, ReferencePill } from "@okeytokey/ui";
 
 import { AliasPicker } from "./editors/AliasPicker.js";
 import { ColorEditor } from "./editors/ColorEditor.js";
+import { ColorFormatBar } from "./editors/ColorFormatBar.js";
 
 /**
  * Figma-style color cell popover: click a color cell and pick — swatch +
@@ -25,6 +26,7 @@ export function CellColorPopover({
   raw,
   seed,
   path,
+  set,
   resolver,
   onApply,
   onClose,
@@ -36,6 +38,8 @@ export function CellColorPopover({
   /** A concrete color to seed the editor with (resolved when raw isn't one). */
   seed: string;
   path: string;
+  /** The set this cell's value lives in (where a group conversion applies). */
+  set: string;
   resolver: Resolver;
   onApply: (value: string) => void;
   onClose: () => void;
@@ -44,17 +48,75 @@ export function CellColorPopover({
   const [linking, setLinking] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // Position adjacent to the anchor (the swatch): below it by default, above
+  // when there's no room below, and — only when neither fits — clamped to stay
+  // on-screen without flinging the popover across the viewport. Measured from
+  // the popover's real height so a short (no-reference) popover hugs the cell.
+  // Re-runs when `linking` toggles because the alias picker changes the height.
   useLayoutEffect(() => {
-    if (!anchor.current) return;
+    const el = popoverRef.current;
+    if (!anchor.current || !el) return;
     const rect = anchor.current.getBoundingClientRect();
-    const left = Math.max(8, Math.min(rect.left, window.innerWidth - POPOVER_WIDTH - 8));
+    const height = Math.min(el.offsetHeight, POPOVER_MAX_HEIGHT);
+    const margin = 8;
+    const left = Math.max(margin, Math.min(rect.left, window.innerWidth - POPOVER_WIDTH - margin));
     const below = rect.bottom + 4;
+    const above = rect.top - height - 4;
     const top =
-      below + POPOVER_MAX_HEIGHT > window.innerHeight
-        ? Math.max(8, rect.top - POPOVER_MAX_HEIGHT - 4)
-        : below;
+      below + height + margin <= window.innerHeight
+        ? below
+        : above >= margin
+          ? above
+          : Math.max(margin, window.innerHeight - height - margin);
     setPosition({ top, left });
+  }, [anchor, linking]);
+
+  // Keyboard: move focus into the popover on open (the color text field), and
+  // restore it to the swatch trigger on close, so Tab/arrow keys land on the
+  // controls instead of skipping to the next cell. Focus must wait until the
+  // popover is positioned — it renders visibility:hidden for the measuring
+  // pass, and a hidden element can't take focus. Tab is trapped to the dialog
+  // (below) so keyboard users don't fall out into the page behind it.
+  const focusedRef = useRef(false);
+  useLayoutEffect(() => {
+    if (!position || focusedRef.current) return;
+    focusedRef.current = true;
+    const input = popoverRef.current?.querySelector<HTMLInputElement>(
+      '[data-testid="color-input"]',
+    );
+    (input ?? popoverRef.current)?.focus();
+    input?.select();
+  }, [position]);
+
+  useEffect(() => {
+    const trigger = anchor.current;
+    return () => {
+      trigger?.focus();
+    };
   }, [anchor]);
+
+  const focusables = () =>
+    Array.from(
+      popoverRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    );
+
+  const onDialogKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key !== "Tab") return;
+    const items = focusables();
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = window.document.activeElement;
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -80,20 +142,26 @@ export function CellColorPopover({
     };
   }, [onClose, anchor]);
 
-  if (!position) return null;
-
   return createPortal(
     <>
       <div
         ref={popoverRef}
         className="cell-popover"
-        style={{ top: position.top, left: position.left, width: POPOVER_WIDTH }}
+        style={{
+          top: position?.top ?? 0,
+          left: position?.left ?? 0,
+          width: POPOVER_WIDTH,
+          // Hidden for the first layout pass so the height can be measured
+          // before the popover paints at its final, adjacent position.
+          visibility: position ? "visible" : "hidden",
+        }}
         role="dialog"
         aria-label={`Edit ${path}`}
         data-testid="cell-popover"
         onClick={(event) => {
           event.stopPropagation();
         }}
+        onKeyDown={onDialogKeyDown}
       >
         {isReference(raw) && (
           <div className="cell-popover-reference">
@@ -102,6 +170,7 @@ export function CellColorPopover({
           </div>
         )}
         <ColorEditor value={isColor(raw) ? raw : seed} onCommit={onApply} />
+        {isColor(raw) && <ColorFormatBar path={path} value={raw} set={set} onCommit={onApply} />}
         {linking ? (
           <div className="alias-picker--inline">
             <AliasPicker

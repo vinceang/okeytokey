@@ -36,10 +36,13 @@ export function ColorFormatBar({
   path,
   value,
   onCommit,
+  set,
 }: {
   path: string;
   value: string;
   onCommit: (value: string) => void;
+  /** Set the group conversion targets. Defaults to the active selection's set. */
+  set?: string;
 }) {
   const selection = useUiStore((state) => state.selection);
   const execute = useDocumentStore((state) => state.execute);
@@ -51,13 +54,14 @@ export function ColorFormatBar({
 
   if (!isColor(value)) return null;
 
+  const targetSet = set ?? selection?.set;
   const groupPath = path.includes(".") ? path.slice(0, path.lastIndexOf(".")) : undefined;
   const groupName = groupPath?.slice(groupPath.lastIndexOf(".") + 1);
 
   const switchFormat = (format: ColorSpace) => {
     const converted = formatColor(parseColor(value), format);
     if (converted !== value) onCommit(converted);
-    if (groupPath === undefined || !selection) {
+    if (groupPath === undefined || targetSet === undefined) {
       setOffer(undefined);
       return;
     }
@@ -65,7 +69,7 @@ export function ColorFormatBar({
     // exclude it here; the store is pre-commit inside this handler).
     const plan = planColorFormatConversion(
       useDocumentStore.getState().document,
-      selection.set,
+      targetSet,
       groupPath,
       format,
     );
@@ -74,11 +78,11 @@ export function ColorFormatBar({
   };
 
   const applyToGroup = () => {
-    if (!offer || !selection || groupPath === undefined) return;
+    if (!offer || targetSet === undefined || groupPath === undefined) return;
     // Recompute against the latest document (this token already converted).
     const plan = planColorFormatConversion(
       useDocumentStore.getState().document,
-      selection.set,
+      targetSet,
       groupPath,
       offer.format,
     );

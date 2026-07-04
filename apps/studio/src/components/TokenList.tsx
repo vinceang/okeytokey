@@ -97,6 +97,13 @@ interface GridColumn {
 }
 
 /**
+ * How a cell edit is happening: `text` is the in-place input (hex/RGB for
+ * colors, like strings and numbers); `popover` is the Figma-style color
+ * picker, opened by clicking the swatch.
+ */
+type EditMode = "text" | "popover";
+
+/**
  * The set that defines `path` under `theme`: the highest-precedence set in
  * the theme's resolution order that holds the token. This is where an edit
  * to this cell would land — and comparing it against the base theme's
@@ -148,13 +155,14 @@ function ValueCell({
   column: GridColumn;
   baseTheme: Theme | undefined;
   focused: boolean;
-  editing: boolean;
-  onStartEdit: () => void;
+  editing: EditMode | undefined;
+  onStartEdit: (mode: EditMode) => void;
   onStopEdit: () => void;
 }) {
   const execute = useDocumentStore((state) => state.execute);
   const [error, setError] = useState<string>();
   const cellRef = useRef<HTMLDivElement>(null);
+  const swatchRef = useRef<HTMLButtonElement>(null);
 
   const definer = column.theme ? definingSet(document, column.theme, path) : fallbackSet.name;
   const token = definer !== undefined ? document.sets.get(definer)?.tokens.get(path) : undefined;
@@ -225,7 +233,7 @@ function ValueCell({
     execute(cmdDeleteToken(definer, path));
   };
 
-  if (editing && editable && !isColorCell) {
+  if (editing === "text" && editable) {
     return (
       <div
         role="gridcell"
@@ -265,10 +273,24 @@ function ValueCell({
     resolved &&
     typeof resolved.value === "string" &&
     isColor(resolved.value) ? (
-      <ColorSwatch
-        color={resolved.value}
-        gamutWarning={gamutWarning(parseColor(resolved.value)) !== undefined}
-      />
+      // The swatch is the popover affordance; the cell text stays inline-editable.
+      <button
+        ref={swatchRef}
+        type="button"
+        className="token-cell-swatch"
+        title="Open the color picker"
+        aria-label={`Open the color picker for ${path} in ${column.label}`}
+        data-testid={`cell-swatch-${path}-${column.key}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onStartEdit("popover");
+        }}
+      >
+        <ColorSwatch
+          color={resolved.value}
+          gamutWarning={gamutWarning(parseColor(resolved.value)) !== undefined}
+        />
+      </button>
     ) : undefined;
 
   const title = isBase
@@ -281,13 +303,13 @@ function ValueCell({
     <div
       ref={cellRef}
       role="gridcell"
-      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}${focused ? " token-cell--focused" : ""}${editing && isColorCell ? " token-cell--editing" : ""}${error !== undefined ? " token-cell--error" : ""}`}
+      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}${focused ? " token-cell--focused" : ""}${editing === "popover" && isColorCell ? " token-cell--editing" : ""}${error !== undefined ? " token-cell--error" : ""}`}
       data-testid={`cell-${path}-${column.key}`}
       title={resolved ? `${title} — resolves to ${String(resolved.value)}` : title}
       onClick={(event) => {
         if (!editable) return;
         event.stopPropagation();
-        onStartEdit();
+        onStartEdit("text");
       }}
     >
       {swatch}
@@ -312,9 +334,9 @@ function ValueCell({
           ↺
         </button>
       )}
-      {editing && isColorCell && (
+      {editing === "popover" && isColorCell && (
         <CellColorPopover
-          anchor={cellRef}
+          anchor={swatchRef.current ? swatchRef : cellRef}
           raw={String(raw)}
           seed={
             resolved && typeof resolved.value === "string" && isColor(resolved.value)
@@ -322,6 +344,7 @@ function ValueCell({
               : "#000000"
           }
           path={path}
+          set={definer}
           resolver={column.resolver}
           onApply={commitValue}
           onClose={onStopEdit}
@@ -350,7 +373,11 @@ export function TokenList({ set, resolver }: TokenListProps) {
 
   const execute = useDocumentStore((state) => state.execute);
   const [dropTarget, setDropTarget] = useState<string>();
-  const [editingCell, setEditingCell] = useState<{ path: string; column: string }>();
+  const [editingCell, setEditingCell] = useState<{
+    path: string;
+    column: string;
+    mode: EditMode;
+  }>();
   const [renaming, setRenaming] = useState<string>();
 
   const rows = useMemo(() => buildRows(set, collapsed, filter), [set, collapsed, filter]);
@@ -509,7 +536,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
       const column = columns[focusedColumn - 1];
       if (column) {
         event.preventDefault();
-        setEditingCell({ path: selection.path, column: column.key });
+        setEditingCell({ path: selection.path, column: column.key, mode: "text" });
       }
       return;
     }
@@ -720,9 +747,11 @@ export function TokenList({ set, resolver }: TokenListProps) {
                     }
                     editing={
                       editingCell?.path === token.pathString && editingCell.column === column.key
+                        ? editingCell.mode
+                        : undefined
                     }
-                    onStartEdit={() => {
-                      setEditingCell({ path: token.pathString, column: column.key });
+                    onStartEdit={(mode) => {
+                      setEditingCell({ path: token.pathString, column: column.key, mode });
                       select({ set: set.name, path: token.pathString });
                     }}
                     onStopEdit={() => {

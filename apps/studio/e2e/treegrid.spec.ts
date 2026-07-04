@@ -36,17 +36,11 @@ test("a dark-set override renders per column with different values", async ({ pa
 
 test("editing a base cell edits in place; the inherited column follows", async ({ page }) => {
   await page.goto("/");
-  // Color cells open a Figma-style popover: picker, text, OKLCH sliders.
+  // Color cells edit their hex/RGB text in place, like strings and numbers.
   await page.getByTestId("cell-colors.blue.500-light").click();
-  const popover = page.getByTestId("cell-popover");
-  await expect(popover).toBeVisible();
-  await popover.getByTestId("color-input").fill("#ff0000");
+  await page.getByTestId("cell-input-colors.blue.500-light").fill("#ff0000");
   await page.keyboard.press("Enter");
-
-  // Commits apply live; the popover stays open until Escape/outside click.
   await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#ff0000");
-  await page.keyboard.press("Escape");
-  await expect(popover).toHaveCount(0);
 
   // Dark inherits the base edit — still dimmed, same value.
   const dark = page.getByTestId("cell-colors.blue.500-dark");
@@ -72,9 +66,8 @@ test("editing an inherited dark cell creates a sparse override — only dark cha
   await expect(page.getByTestId("set-dark")).toContainText("2"); // sparse: 2 overrides
 
   await page.getByTestId("cell-colors.blue.500-dark").click();
-  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#112233");
+  await page.getByTestId("cell-input-colors.blue.500-dark").fill("#112233");
   await page.keyboard.press("Enter");
-  await page.keyboard.press("Escape");
 
   const dark = page.getByTestId("cell-colors.blue.500-dark");
   await expect(dark).toContainText("#112233");
@@ -108,17 +101,18 @@ test("reset-to-inherited removes an override, undoably; Escape cancels an edit",
   await page.getByTestId("undo").click();
   await expect(dark).toContainText("colors.gray.900");
 
-  // Escape closes the popover without committing pending text.
+  // Escape cancels a pending inline edit without committing.
   await page.getByTestId("cell-semantic.action-light").click();
-  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#000000");
+  await page.getByTestId("cell-input-semantic.action-light").fill("#000000");
   await page.keyboard.press("Escape");
-  await expect(page.getByTestId("cell-popover")).toHaveCount(0);
+  await expect(page.getByTestId("cell-input-semantic.action-light")).toHaveCount(0);
   await expect(page.getByTestId("cell-semantic.action-light")).toContainText("colors.blue.500");
 });
 
 test("the color popover links a cell to another token (Figma's Libraries)", async ({ page }) => {
   await page.goto("/");
-  await page.getByTestId("cell-colors.blue.600-dark").click();
+  // The swatch opens the Figma-style popover; the cell text stays inline-editable.
+  await page.getByTestId("cell-swatch-colors.blue.600-dark").click();
   const popover = page.getByTestId("cell-popover");
   await popover.getByTestId("cell-popover-reference").click();
   await popover.getByPlaceholder(/Search/).fill("gray.900");
@@ -132,9 +126,52 @@ test("the color popover links a cell to another token (Figma's Libraries)", asyn
   await expect(dark).toHaveAttribute("title", /Overridden in dark/);
   await expect(page.getByTestId("cell-colors.blue.600-light")).toContainText("#2563eb");
 
-  await dark.click();
+  await page.getByTestId("cell-swatch-colors.blue.600-dark").click();
   await expect(popover.locator(".cell-popover-reference")).toContainText("colors.gray.900");
   await page.keyboard.press("Escape");
+});
+
+test("the swatch popover is keyboard-operable: focus enters it, Tab is trapped, Escape restores", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const swatch = page.getByTestId("cell-swatch-colors.blue.500-light");
+  await swatch.focus();
+  await expect(swatch).toBeFocused();
+
+  // Enter on the swatch opens the popover AND moves focus into it (the color
+  // field), so keyboard users edit the value instead of tabbing to the next cell.
+  await page.keyboard.press("Enter");
+  const popover = page.getByTestId("cell-popover");
+  await expect(popover).toBeVisible();
+  await expect(popover.getByTestId("color-input")).toBeFocused();
+
+  // Tab is trapped inside the dialog — it never falls back to the grid.
+  await page.keyboard.press("Tab");
+  await expect(page.locator('[data-testid="cell-popover"] :focus')).toHaveCount(1);
+
+  // Escape closes and returns focus to the swatch that opened it.
+  await page.keyboard.press("Escape");
+  await expect(popover).toHaveCount(0);
+  await expect(swatch).toBeFocused();
+});
+
+test("the popover carries the hex/rgb/oklch notation switch", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("cell-swatch-colors.blue.500-light").click();
+  const popover = page.getByTestId("cell-popover");
+  await expect(popover).toBeVisible();
+
+  // Switching notation in the popover converts this cell's literal in place.
+  await popover
+    .getByRole("group", { name: "Color notation" })
+    .getByRole("button", { name: "rgb" })
+    .click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("rgb(59, 130, 246)");
+
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#3b82f6");
 });
 
 test("＋ mode adds a set and a theme column; its cells take sparse overrides", async ({ page }) => {
@@ -151,9 +188,8 @@ test("＋ mode adds a set and a theme column; its cells take sparse overrides", 
 
   // Editing a cell in the new column writes into the new set.
   await page.getByTestId("cell-colors.gray.50-high-contrast").click();
-  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#ffffff");
+  await page.getByTestId("cell-input-colors.gray.50-high-contrast").fill("#ffffff");
   await page.keyboard.press("Enter");
-  await page.keyboard.press("Escape");
   await expect(page.getByTestId("cell-colors.gray.50-high-contrast")).toHaveAttribute(
     "title",
     /Overridden in high-contrast/,
@@ -191,15 +227,14 @@ test("keyboard: arrows move rows and columns, Enter edits the focused cell", asy
   await page.getByTestId("token-colors.blue.500").locator(".okey-token-row").click();
   await page.getByTestId("token-list").focus();
 
-  // → moves the column focus onto the light cell; Enter opens its editor
-  // (the color popover, since this is a color cell).
+  // → moves the column focus onto the light cell; Enter opens its inline
+  // editor (hex/RGB text, like strings and numbers).
   await page.keyboard.press("ArrowRight");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toHaveClass(/token-cell--focused/);
   await page.keyboard.press("Enter");
-  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#00ff00");
+  await page.getByTestId("cell-input-colors.blue.500-light").fill("#00ff00");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#00ff00");
-  await page.keyboard.press("Escape");
 
   // ↓ still moves the row selection; the treegrid role is exposed.
   await page.getByTestId("token-list").focus();
@@ -234,9 +269,8 @@ test("a theme whose set was deleted still exports (with a warning) and heals on 
   // recreated (by name) with the override in it — one undoable step, and
   // light is untouched.
   await page.getByTestId("cell-colors.blue.500-dark").click();
-  await page.getByTestId("cell-popover").getByTestId("color-input").fill("#112233");
+  await page.getByTestId("cell-input-colors.blue.500-dark").fill("#112233");
   await page.keyboard.press("Enter");
-  await page.keyboard.press("Escape");
 
   const dark = page.getByTestId("cell-colors.blue.500-dark");
   await expect(dark).toContainText("#112233");
