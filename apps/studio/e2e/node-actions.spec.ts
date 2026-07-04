@@ -76,6 +76,44 @@ test("renaming a group cascades to children and retargets references", async ({ 
   await expect(page.getByTestId("token-semantic.action")).toContainText("{colors.blue.500}");
 });
 
+test("a group's ⋮ Sort A→Z orders just that group, undoable", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("filter-input")).toBeVisible();
+
+  const spacingOrder = () =>
+    page
+      .locator('[data-testid^="token-spacing."]')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid")));
+
+  // Starter document order is base, sm, md, lg — not alphabetical.
+  expect(await spacingOrder()).toEqual([
+    "token-spacing.base",
+    "token-spacing.sm",
+    "token-spacing.md",
+    "token-spacing.lg",
+  ]);
+
+  await page.getByTestId("node-menu-spacing").click();
+  await page.getByTestId("group-sort-spacing").click();
+
+  // Only spacing is reordered (base, lg, md, sm); colors is untouched.
+  expect(await spacingOrder()).toEqual([
+    "token-spacing.base",
+    "token-spacing.lg",
+    "token-spacing.md",
+    "token-spacing.sm",
+  ]);
+  await expect(page.getByTestId("group-colors")).toBeVisible();
+
+  await page.getByTestId("undo").click();
+  expect(await spacingOrder()).toEqual([
+    "token-spacing.base",
+    "token-spacing.sm",
+    "token-spacing.md",
+    "token-spacing.lg",
+  ]);
+});
+
 test("a token's ⋮ menu renames inline", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("filter-input")).toBeVisible();

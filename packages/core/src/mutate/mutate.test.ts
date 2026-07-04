@@ -13,6 +13,7 @@ import {
   setGroupMeta,
   setTokenMeta,
   setTokenValue,
+  sortGroup,
   sortTokenSet,
   withSet,
 } from "./mutate.js";
@@ -170,6 +171,26 @@ describe("sortTokenSet", () => {
     const once = sortTokenSet(unsorted());
     const twice = sortTokenSet(once);
     expect(serializeTokenSet(twice)).toBe(serializeTokenSet(once));
+  });
+
+  it("sortGroup sorts only the targeted subtree, leaving siblings in place", () => {
+    const sorted = sortGroup(unsorted(), "colors");
+    // colors is reordered (blue, gray, red)…
+    expect([...sorted.tokens.keys()]).toEqual([
+      "colors.blue",
+      "colors.gray.50",
+      "colors.gray.100",
+      "colors.gray.500",
+      "colors.red",
+      // …while spacing keeps its original document order (md before base).
+      "spacing.md",
+      "spacing.base",
+    ]);
+  });
+
+  it("sortGroup rejects a token path or a missing group", () => {
+    expect(() => sortGroup(unsorted(), "colors.red")).toThrow(TokenMutationError);
+    expect(() => sortGroup(unsorted(), "nope")).toThrow(TokenMutationError);
   });
 });
 

@@ -208,6 +208,20 @@ export function sortTokenSet(set: TokenSet): TokenSet {
   return parseTokenSet(set.name, sortNode(set.root));
 }
 
+/**
+ * Sort just the group at `path` (its subtree), leaving the rest of the set in
+ * place — the group-scoped counterpart to {@link sortTokenSet}. Values and
+ * `$`-metadata are untouched.
+ */
+export function sortGroup(set: TokenSet, path: string): TokenSet {
+  const segments = validatePath(set.name, path);
+  const node = getNode(set.root, segments);
+  if (!(node instanceof Map) || node.has("$value")) {
+    fail(set.name, path, "Group does not exist");
+  }
+  return parseTokenSet(set.name, withChild(set.root, segments, sortNode(node)));
+}
+
 // ---------------------------------------------------------------------------
 // Document-level operations
 // ---------------------------------------------------------------------------

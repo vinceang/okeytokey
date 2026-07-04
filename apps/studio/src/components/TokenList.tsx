@@ -31,6 +31,7 @@ import {
   cmdDuplicateToken,
   cmdRenameToken,
   cmdSetTokenValue,
+  cmdSortGroup,
   nextDuplicatePath,
 } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
@@ -900,6 +901,18 @@ export function TokenList({ set, resolver }: TokenListProps) {
                                 }}
                               >
                                 New token…
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                className="row-menu-item"
+                                data-testid={`group-sort-${row.path}`}
+                                onClick={() => {
+                                  close();
+                                  execute(cmdSortGroup(set.name, row.path));
+                                }}
+                              >
+                                Sort A→Z
                               </button>
                               <button
                                 type="button"
