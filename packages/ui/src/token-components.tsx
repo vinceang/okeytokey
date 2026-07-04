@@ -95,6 +95,8 @@ export interface TokenRowProps {
   preview?: ReactNode;
   indent?: number;
   onSelect?: () => void;
+  /** E.g. begin an inline rename. */
+  onDoubleClick?: () => void;
 }
 
 /** One row in the token list. Pure presentation; virtualization is the caller's. */
@@ -106,6 +108,7 @@ export function TokenRow({
   preview,
   indent = 0,
   onSelect,
+  onDoubleClick,
 }: TokenRowProps) {
   return (
     <button
@@ -118,6 +121,7 @@ export function TokenRow({
           : undefined
       }
       onClick={onSelect}
+      onDoubleClick={onDoubleClick}
     >
       <TokenTypeIcon type={type} />
       <span

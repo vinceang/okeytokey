@@ -19,6 +19,7 @@ import { ColorSwatch, ReferencePill, TokenRow } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
 import {
+  cmdAddSet,
   cmdCreateToken,
   cmdDeleteToken,
   cmdRenameToken,
@@ -300,16 +301,19 @@ export interface TokenListProps {
 export function TokenList({ set, resolver }: TokenListProps) {
   const document = useDocumentStore((state) => state.document);
   const themes = useDocumentStore((state) => state.themes);
+  const setThemes = useDocumentStore((state) => state.setThemes);
   const filter = useUiStore((state) => state.filter);
   const collapsed = useUiStore((state) => state.collapsed);
   const selection = useUiStore((state) => state.selection);
   const activeTheme = useUiStore((state) => state.activeTheme);
   const select = useUiStore((state) => state.select);
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
+  const openDialog = useUiStore((state) => state.openDialog);
 
   const execute = useDocumentStore((state) => state.execute);
   const [dropTarget, setDropTarget] = useState<string>();
   const [editingCell, setEditingCell] = useState<{ path: string; column: string }>();
+  const [renaming, setRenaming] = useState<string>();
 
   const rows = useMemo(() => buildRows(set, collapsed, filter), [set, collapsed, filter]);
 
@@ -335,12 +339,58 @@ export function TokenList({ set, resolver }: TokenListProps) {
   }, [themes, document, resolver]);
 
   const baseTheme = columns[0]?.theme;
+  // Trailing 36px track hosts the ＋ (new mode) header button.
   const gridTemplate = `minmax(${String(NAME_COL_MIN)}px, 1.6fr) repeat(${String(
     columns.length,
-  )}, minmax(${String(VALUE_COL_MIN)}px, 1fr))`;
-  const gridMinWidth = NAME_COL_MIN + columns.length * VALUE_COL_MIN;
+  )}, minmax(${String(VALUE_COL_MIN)}px, 1fr)) 36px`;
+  const gridMinWidth = NAME_COL_MIN + columns.length * VALUE_COL_MIN + 36;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ＋ mode: a new sparse set plus a theme layering it on the base theme's
+  // stack — the DTCG shape behind "add a column". The set creation is
+  // undoable; the theme joins the base theme's group (a mode dimension).
+  const addMode = () => {
+    const name = window.prompt("New mode name (creates a set and a theme)")?.trim();
+    if (!name) return;
+    if (document.sets.has(name) || themes.some((theme) => theme.name === name)) {
+      window.alert(`"${name}" already exists.`);
+      return;
+    }
+    try {
+      execute(cmdAddSet(name));
+      const sets = baseTheme
+        ? [...baseTheme.sets, { set: name, status: "enabled" as const }]
+        : [
+            ...[...document.sets.keys()].map((existing) => ({
+              set: existing,
+              status: "enabled" as const,
+            })),
+            { set: name, status: "enabled" as const },
+          ];
+      setThemes([...themes, { name, group: baseTheme?.group, sets }]);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  // Inline rename (double-click a name): the rename-refactor retargets every
+  // reference; one undo reverses it. Under a filter, rows show full paths and
+  // the input edits the full path; otherwise just the leaf segment.
+  const commitRename = (path: string, input: string) => {
+    setRenaming(undefined);
+    const next = input.trim();
+    if (next === "") return;
+    const parent = filter.trim() === "" ? path.slice(0, Math.max(0, path.lastIndexOf("."))) : "";
+    const nextPath = parent === "" ? next : `${parent}.${next}`;
+    if (nextPath === path) return;
+    try {
+      execute(cmdRenameToken(path, nextPath));
+      select({ set: set.name, path: nextPath });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  };
 
   // Drag-to-reorganize: token and group rows are drag sources; group rows and
   // the list background (root) are drop targets. A drop is a rename — every
@@ -473,6 +523,16 @@ export function TokenList({ set, resolver }: TokenListProps) {
             )}
           </div>
         ))}
+        <button
+          type="button"
+          className="token-grid-add-col"
+          title="New mode — a set for its overrides plus a theme column"
+          aria-label="New mode"
+          data-testid="add-mode"
+          onClick={addMode}
+        >
+          ＋
+        </button>
       </div>
       <div
         className="token-list-inner"
@@ -525,16 +585,47 @@ export function TokenList({ set, resolver }: TokenListProps) {
                 select({ set: set.name, path: token.pathString });
               }}
             >
-              <TokenRow
-                name={row.name}
-                type={token.type}
-                deprecated={token.deprecated !== undefined && token.deprecated !== false}
-                selected={selection?.set === set.name && selection.path === token.pathString}
-                indent={row.depth}
-                onSelect={() => {
-                  select({ set: set.name, path: token.pathString });
-                }}
-              />
+              {renaming === token.pathString ? (
+                <div
+                  className="token-cell token-cell--editing"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <input
+                    className="token-cell-input"
+                    defaultValue={row.name}
+                    autoFocus
+                    aria-label={`Rename ${token.pathString}`}
+                    data-testid={`rename-input-${token.pathString}`}
+                    onFocus={(event) => {
+                      event.target.select();
+                    }}
+                    onBlur={(event) => {
+                      commitRename(token.pathString, event.target.value);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter")
+                        commitRename(token.pathString, event.currentTarget.value);
+                      if (event.key === "Escape") setRenaming(undefined);
+                    }}
+                  />
+                </div>
+              ) : (
+                <TokenRow
+                  name={row.name}
+                  type={token.type}
+                  deprecated={token.deprecated !== undefined && token.deprecated !== false}
+                  selected={selection?.set === set.name && selection.path === token.pathString}
+                  indent={row.depth}
+                  onSelect={() => {
+                    select({ set: set.name, path: token.pathString });
+                  }}
+                  onDoubleClick={() => {
+                    setRenaming(token.pathString);
+                  }}
+                />
+              )}
               {columns.map((column) => (
                 <ValueCell
                   key={column.key}
@@ -559,6 +650,16 @@ export function TokenList({ set, resolver }: TokenListProps) {
           );
         })}
       </div>
+      <button
+        type="button"
+        className="token-grid-footer"
+        data-testid="grid-new-token"
+        onClick={() => {
+          openDialog("new-token");
+        }}
+      >
+        ＋ New token
+      </button>
     </div>
   );
 }

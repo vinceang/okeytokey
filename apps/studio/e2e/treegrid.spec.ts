@@ -99,6 +99,53 @@ test("reset-to-inherited removes an override, undoably; Escape cancels an edit",
   await expect(page.getByTestId("cell-semantic.action-light")).toContainText("colors.blue.500");
 });
 
+test("＋ mode adds a set and a theme column; its cells take sparse overrides", async ({ page }) => {
+  await page.goto("/");
+  page.once("dialog", (dialog) => {
+    void dialog.accept("high-contrast");
+  });
+  await page.getByTestId("add-mode").click();
+
+  // New column, new set, theme joins the mode group.
+  await expect(page.getByTestId("col-high-contrast")).toBeVisible();
+  await expect(page.getByTestId("set-high-contrast")).toBeVisible();
+  await expect(page.getByTestId("col-high-contrast")).toContainText("mode");
+
+  // Editing a cell in the new column writes into the new set.
+  await page.getByTestId("cell-colors.gray.50-high-contrast").click();
+  await page.getByTestId("cell-input-colors.gray.50-high-contrast").fill("#ffffff");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("cell-colors.gray.50-high-contrast")).toHaveAttribute(
+    "title",
+    /Overridden in high-contrast/,
+  );
+  await expect(page.getByTestId("set-high-contrast")).toContainText("1");
+  // The other columns are untouched.
+  await expect(page.getByTestId("cell-colors.gray.50-light")).toContainText("#f8fafc");
+});
+
+test("double-click renames inline; references follow via the refactor", async ({ page }) => {
+  await page.goto("/");
+  // semantic.action references colors.blue.500 — rename its leaf 500 → 550.
+  await page.getByTestId("token-colors.blue.500").locator(".okey-token-row").dblclick();
+  await page.getByTestId("rename-input-colors.blue.500").fill("550");
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByTestId("token-colors.blue.550")).toBeVisible();
+  await page.getByTestId("set-semantic").click();
+  await expect(page.getByTestId("cell-semantic.action-light")).toContainText("colors.blue.550");
+
+  // One undo reverses the rename, references included.
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("cell-semantic.action-light")).toContainText("colors.blue.500");
+});
+
+test("the footer ＋ New token opens the creation dialog", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("grid-new-token").click();
+  await expect(page.getByTestId("new-token-path")).toBeVisible();
+});
+
 test("collapsing a group folds its rows; cells follow the filter's flat view", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toBeVisible();

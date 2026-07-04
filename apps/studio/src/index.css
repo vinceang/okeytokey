@@ -321,6 +321,43 @@ a.sidebar-item {
   background: var(--surface-hover);
 }
 
+/* ＋ new mode, in the header's trailing track. */
+.token-grid-add-col {
+  align-self: stretch;
+  border: none;
+  border-left: 1px solid var(--line-subtle);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--text-md);
+  cursor: pointer;
+}
+
+.token-grid-add-col:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+/* ＋ new token, after the last row (Figma's "Create variable"). */
+.token-grid-footer {
+  position: sticky;
+  left: 0;
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-top: 1px solid var(--line-subtle);
+  background: transparent;
+  font: 500 var(--text-sm) var(--font-sans);
+  color: var(--text-tertiary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.token-grid-footer:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
 .token-list-row--drop {
   box-shadow: inset 0 0 0 2px var(--accent-300);
   border-radius: var(--radius-sm);
