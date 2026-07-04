@@ -9,6 +9,8 @@ so it doesn't live only in commit messages.
 - ~~Theme groups UI + matrix expansion~~ — shipped post-v1 (ADR 0005)
 - ~~Drag-to-reorganize the token tree~~ — shipped post-v1
 - ~~Docs site with a real user guide~~ — shipped post-v1 (`docs/site/`)
+- ~~Solidify round~~ — shipped: numeric scale-step tree sort, set/theme kebab menu
+  (guarded delete, rename, sort A→Z, per-set export), `sortTokenSet` core mutation
 - **Publish `@okeytokey/*` to npm** — changesets are configured; needs a decision on
   the npm scope/org (the unscoped `okeytokey` and `create-okeytokey` names are
   already reserved) and a release workflow.
@@ -41,17 +43,17 @@ Spec: [docs/phase-7-spec.md](docs/phase-7-spec.md) · Decisions: ADR 0006.
 
 - **Lint configuration UI** — `okeytokey.config.json` lint levels and contrast pairs
   are engine-ready; the studio should let you edit them (today: defaults only).
-- **Export-time unit transform (px → rem)** — the editor's px/rem switcher rewrites
-  source files; the global "I want rem in my shipped CSS regardless of authoring
-  unit" belongs in the export pipeline as a Style-Dictionary-style transform with a
-  configurable root size.
+- ~~Export-time unit transform (px → rem)~~ — shipped: `transformEntries` in
+  `@okeytokey/transforms` (format-agnostic, configurable base), surfaced as a
+  "Convert px to rem" checkbox in the export dialog. (CLI/build wiring still
+  possible via an `okeytokey.config.json` transform flag — not yet exposed.)
 - **Google Fonts live previews + full catalog** — the New Token dialog bundles a
   curated static family list (offline, no key). Live previews mean loading
   stylesheets from fonts.googleapis.com; the full searchable catalog needs the
   Google Fonts metadata API and a key. Both deferred pending a decision on the
   key and the network posture.
-- **Type/spacing scale generators** — extend Phase 7.0's color Scale Generator to
-  modular type scales and spacing ramps.
+- ~~Type/spacing scale generators~~ — shipped: `planDimensionScale` (modular
+  base × ratio scale) + "Generate spacing / size scale…" dialog with ratio presets.
 - **Additional sync providers** — GitLab / Azure DevOps / Bitbucket behind the
   existing `SyncProvider` interface.
 - **Continuous two-way Figma variable sync** — read and write paths exist; live sync
