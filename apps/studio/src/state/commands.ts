@@ -10,6 +10,7 @@ import {
   setGroupMeta,
   setTokenMeta,
   setTokenValue,
+  sortTokenSet,
   withSet,
   type TokenDocument,
   type TokenInit,
@@ -83,6 +84,10 @@ export function cmdSetGroupMeta(
 
 export function cmdDeleteToken(setName: string, path: string): Command {
   return setCommand(`Delete ${path}`, setName, (set) => deleteToken(set, path));
+}
+
+export function cmdSortSet(setName: string): Command {
+  return setCommand(`Sort ${setName} A→Z`, setName, sortTokenSet);
 }
 
 export function cmdAddSet(name: string): Command {

@@ -13,6 +13,7 @@ import {
   setGroupMeta,
   setTokenMeta,
   setTokenValue,
+  sortTokenSet,
   withSet,
 } from "./mutate.js";
 
@@ -122,6 +123,53 @@ describe("setGroupMeta", () => {
   it("rejects tokens and missing paths", () => {
     expect(() => setGroupMeta(base(), "colors.blue", {})).toThrow(/Group does not exist/);
     expect(() => setGroupMeta(base(), "nope", {})).toThrow(/Group does not exist/);
+  });
+});
+
+describe("sortTokenSet", () => {
+  const unsorted = () =>
+    parseTokenSet(
+      "global",
+      `{
+  "colors": {
+    "$type": "color",
+    "red": { "$value": "#ff0000" },
+    "blue": { "$value": "#0000ff" },
+    "gray": {
+      "500": { "$value": "#888888" },
+      "50": { "$value": "#eeeeee" },
+      "100": { "$value": "#dddddd" }
+    }
+  },
+  "spacing": { "$type": "dimension", "md": { "$value": "16px" }, "base": { "$value": "4px" } }
+}`,
+    );
+
+  it("orders groups and tokens by name, numeric steps naturally", () => {
+    const sorted = sortTokenSet(unsorted());
+    expect([...sorted.tokens.keys()]).toEqual([
+      "colors.blue",
+      "colors.gray.50",
+      "colors.gray.100",
+      "colors.gray.500",
+      "colors.red",
+      "spacing.base",
+      "spacing.md",
+    ]);
+  });
+
+  it("preserves $-metadata order and every value", () => {
+    const sorted = sortTokenSet(unsorted());
+    // $type stays at the head of its group, not sorted among children.
+    expect(serializeTokenSet(sorted)).toMatch(/"colors":\s*\{\s*"\$type": "color"/);
+    expect(sorted.tokens.get("colors.gray.50")?.value).toBe("#eeeeee");
+    expect(sorted.tokens.get("spacing.base")?.value).toBe("4px");
+  });
+
+  it("is idempotent", () => {
+    const once = sortTokenSet(unsorted());
+    const twice = sortTokenSet(once);
+    expect(serializeTokenSet(twice)).toBe(serializeTokenSet(once));
   });
 });
 

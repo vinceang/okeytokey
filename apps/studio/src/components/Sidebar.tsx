@@ -10,7 +10,13 @@ import {
 } from "@okeytokey/core";
 import { Button } from "@okeytokey/ui";
 
-import { cmdAddSet, cmdImportSet, cmdRemoveSet, cmdRenameSet } from "../state/commands.js";
+import {
+  cmdAddSet,
+  cmdImportSet,
+  cmdRemoveSet,
+  cmdRenameSet,
+  cmdSortSet,
+} from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 import { ThemeDialog } from "./dialogs.js";
@@ -201,6 +207,18 @@ export function Sidebar() {
                     }}
                   >
                     Rename…
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="row-menu-item"
+                    data-testid={`set-sort-${set.name}`}
+                    onClick={() => {
+                      close();
+                      execute(cmdSortSet(set.name));
+                    }}
+                  >
+                    Sort A→Z
                   </button>
                   <button
                     type="button"

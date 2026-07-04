@@ -183,6 +183,31 @@ export function setGroupMeta(
   return parseTokenSet(set.name, withChild(set.root, segments, next));
 }
 
+/**
+ * Recursively order a group's children by name, keeping `$`-metadata keys
+ * ($type, $description…) in front and in their original order. Names sort
+ * naturally so scale steps read 50, 100, 500 (not 100, 50, 500) and words
+ * sort alphabetically. Token nodes (all-`$` keys) are left exactly as-is.
+ */
+function sortNode(node: JsonMap): JsonMap {
+  const meta: [string, JsonValue][] = [];
+  const children: [string, JsonValue][] = [];
+  for (const [key, value] of node) {
+    if (key.startsWith("$")) {
+      meta.push([key, value]);
+    } else {
+      children.push([key, value instanceof Map ? sortNode(value) : value]);
+    }
+  }
+  children.sort((a, b) => a[0].localeCompare(b[0], "en", { numeric: true, sensitivity: "base" }));
+  return new Map([...meta, ...children]);
+}
+
+/** Sort every group's members by name, recursively. Values are untouched. */
+export function sortTokenSet(set: TokenSet): TokenSet {
+  return parseTokenSet(set.name, sortNode(set.root));
+}
+
 // ---------------------------------------------------------------------------
 // Document-level operations
 // ---------------------------------------------------------------------------

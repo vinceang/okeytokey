@@ -45,6 +45,7 @@ export {
   setGroupMeta,
   setTokenMeta,
   setTokenValue,
+  sortTokenSet,
   withSet,
   type TokenInit,
   type TokenMetaPatch,
