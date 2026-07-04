@@ -127,7 +127,48 @@
       no save button.
     </p>
 
-    <h2 id="editing">3. Creating and editing tokens</h2>
+    <h2 id="grid">3. The token grid: themes as columns</h2>
+    <p>
+      The main view is a <strong>treegrid</strong>: your group hierarchy stays in the Name column
+      (expand/collapse, drag to reorganize, arrow-key navigation), and
+      <strong>each theme renders as a value column</strong> — Light and Dark side by side, like
+      Figma Variables. Because DTCG stores themes as <em>sparse override sets</em> rather than
+      per-mode values, the grid is honest about where each value comes from:
+    </p>
+    <ul>
+      <li>
+        <strong>Dimmed cells are inherited</strong> — the theme resolves the base value; nothing
+        theme-specific exists. <strong>Full-strength cells are overrides</strong>, defined in the
+        theme's own set (hover the cell to see which set, and what it resolves to).
+      </li>
+      <li>
+        <strong>Click a cell to edit inline</strong> (Enter commits, Escape cancels). Editing a base
+        cell edits the token in place. Editing an <em>inherited</em> cell in another theme creates a
+        sparse override in that theme's set — <em>only that theme changes</em>, and your files stay
+        clean. Overridden cells grow a hover <strong>↺</strong> that removes the override and
+        inherits again. Every edit is one undo.
+      </li>
+      <li>
+        <strong>Double-click a name to rename inline</strong> — the rename-refactor retargets every
+        alias, math expression, and color function that pointed at it.
+      </li>
+      <li>
+        <strong>＋ in the header adds a mode</strong>: a new set for its overrides plus a theme
+        column layered on the base, joining the same theme group. <strong>＋ New token</strong>
+        (footer) adds a row.
+      </li>
+      <li>
+        Keyboard: <kbd>↑</kbd>/<kbd>↓</kbd> move across tokens, <kbd>←</kbd>/<kbd>→</kbd> move the
+        column focus, <kbd>Enter</kbd> edits the focused cell.
+      </li>
+      <li>
+        Composite values (typography, shadows) show a summary chip in the cell — select the row and
+        use the inspector's dedicated composers. With no themes defined, the grid shows a single
+        Value column.
+      </li>
+    </ul>
+
+    <h2 id="editing">3b. Creating and editing tokens</h2>
     <p>
       <strong>New token</strong> (toolbar) asks for a path like <code>colors.brand.500</code> —
       intermediate groups are created for you, and the type follows the group you're targeting. The

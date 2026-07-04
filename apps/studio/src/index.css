@@ -321,7 +321,39 @@ a.sidebar-item {
   background: var(--surface-hover);
 }
 
+/* ARIA wrappers stay layout-transparent: the row is the CSS grid, so the
+   rowheader/gridcell wrappers must fill their track. */
+.token-name-cell {
+  display: flex;
+  min-width: 0;
+}
+
+.token-name-cell > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.group-cell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.token-grid-add-wrap {
+  display: flex;
+  align-self: stretch;
+}
+
+/* Keyboard column focus (←/→, Enter edits) on the selected row. */
+.token-cell--focused {
+  box-shadow: inset 0 0 0 2px var(--accent-300);
+}
+
 /* ＋ new mode, in the header's trailing track. */
+.token-grid-add-col {
+  flex: 1;
+}
+
 .token-grid-add-col {
   align-self: stretch;
   border: none;

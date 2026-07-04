@@ -136,6 +136,7 @@ function ValueCell({
   path,
   column,
   baseTheme,
+  focused,
   editing,
   onStartEdit,
   onStopEdit,
@@ -145,6 +146,7 @@ function ValueCell({
   path: string;
   column: GridColumn;
   baseTheme: Theme | undefined;
+  focused: boolean;
   editing: boolean;
   onStartEdit: () => void;
   onStopEdit: () => void;
@@ -156,7 +158,11 @@ function ValueCell({
   const token = definer !== undefined ? document.sets.get(definer)?.tokens.get(path) : undefined;
   if (definer === undefined || !token) {
     return (
-      <div className="token-cell token-cell--missing" data-testid={`cell-${path}-${column.key}`}>
+      <div
+        role="gridcell"
+        className="token-cell token-cell--missing"
+        data-testid={`cell-${path}-${column.key}`}
+      >
         —
       </div>
     );
@@ -208,6 +214,7 @@ function ValueCell({
   if (editing && editable) {
     return (
       <div
+        role="gridcell"
         className={`token-cell token-cell--editing${error !== undefined ? " token-cell--error" : ""}`}
         data-testid={`cell-${path}-${column.key}`}
         title={error}
@@ -258,7 +265,8 @@ function ValueCell({
 
   return (
     <div
-      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}`}
+      role="gridcell"
+      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}${focused ? " token-cell--focused" : ""}`}
       data-testid={`cell-${path}-${column.key}`}
       title={resolved ? `${title} — resolves to ${String(resolved.value)}` : title}
       onClick={(event) => {
@@ -451,9 +459,30 @@ export function TokenList({ set, resolver }: TokenListProps) {
     scrollPaddingStart: HEADER_HEIGHT,
   });
 
-  // Keyboard-first: arrows move the selection across token rows (groups are
-  // skipped); Home/End jump. Rows are buttons, so Enter/Space work natively.
+  // Keyboard-first: ↑/↓ move the selection across token rows (groups are
+  // skipped); Home/End jump; ←/→ move the column focus and Enter opens the
+  // focused value cell's editor. Rows are buttons, so Space still selects.
+  const [focusedColumn, setFocusedColumn] = useState(0); // 0 = Name
   const onKeyDown = (event: React.KeyboardEvent) => {
+    // Never fight an open inline editor's own keys.
+    if (editingCell !== undefined || renaming !== undefined) return;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      setFocusedColumn((current) =>
+        event.key === "ArrowRight"
+          ? Math.min(columns.length, current + 1)
+          : Math.max(0, current - 1),
+      );
+      return;
+    }
+    if (event.key === "Enter" && focusedColumn > 0 && selection?.set === set.name) {
+      const column = columns[focusedColumn - 1];
+      if (column) {
+        event.preventDefault();
+        setEditingCell({ path: selection.path, column: column.key });
+      }
+      return;
+    }
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
     const tokenRows = rows.filter(
       (row): row is Extract<Row, { kind: "token" }> => row.kind === "token",
@@ -497,158 +526,184 @@ export function TokenList({ set, resolver }: TokenListProps) {
       className="token-scroll"
       ref={scrollRef}
       data-testid="token-list"
-      role="region"
-      aria-label="Tokens"
       tabIndex={0}
       onKeyDown={onKeyDown}
       {...dropTargetProps(undefined)}
     >
-      <div
-        className="token-grid-header"
-        style={{ gridTemplateColumns: gridTemplate, minWidth: gridMinWidth }}
-        data-testid="token-grid-header"
-      >
-        <div className="token-grid-header-cell">Name</div>
-        {columns.map((column) => (
-          <div
-            key={column.key}
-            className={`token-grid-header-cell${
-              activeTheme === column.key ? " token-grid-header-cell--active" : ""
-            }`}
-            data-testid={`col-${column.key}`}
-          >
-            {column.label}
-            {column.theme?.group !== undefined && (
-              <span className="token-grid-header-group">{column.theme.group}</span>
-            )}
-          </div>
-        ))}
-        <button
-          type="button"
-          className="token-grid-add-col"
-          title="New mode — a set for its overrides plus a theme column"
-          aria-label="New mode"
-          data-testid="add-mode"
-          onClick={addMode}
+      {/* ARIA treegrid: hierarchy in the rowheader column, themes as columns.
+          Structure is treegrid > (header row | rowgroup > rows > cells). */}
+      <div role="treegrid" aria-label="Tokens" aria-colcount={columns.length + 1}>
+        <div
+          className="token-grid-header"
+          style={{ gridTemplateColumns: gridTemplate, minWidth: gridMinWidth }}
+          data-testid="token-grid-header"
+          role="row"
         >
-          ＋
-        </button>
-      </div>
-      <div
-        className="token-list-inner"
-        style={{ height: virtualizer.getTotalSize(), minWidth: gridMinWidth }}
-      >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          const row = rows[virtualRow.index];
-          if (!row) return null;
-          const style = {
-            height: virtualRow.size,
-            transform: `translateY(${String(virtualRow.start)}px)`,
-          };
-          if (row.kind === "group") {
+          <div className="token-grid-header-cell" role="columnheader">
+            Name
+          </div>
+          {columns.map((column) => (
+            <div
+              key={column.key}
+              role="columnheader"
+              className={`token-grid-header-cell${
+                activeTheme === column.key ? " token-grid-header-cell--active" : ""
+              }`}
+              data-testid={`col-${column.key}`}
+            >
+              {column.label}
+              {column.theme?.group !== undefined && (
+                <span className="token-grid-header-group">{column.theme.group}</span>
+              )}
+            </div>
+          ))}
+          <div role="columnheader" className="token-grid-add-wrap">
+            <button
+              type="button"
+              className="token-grid-add-col"
+              title="New mode — a set for its overrides plus a theme column"
+              aria-label="New mode"
+              data-testid="add-mode"
+              onClick={addMode}
+            >
+              ＋
+            </button>
+          </div>
+        </div>
+        <div
+          className="token-list-inner"
+          role="rowgroup"
+          style={{ height: virtualizer.getTotalSize(), minWidth: gridMinWidth }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const row = rows[virtualRow.index];
+            if (!row) return null;
+            const style = {
+              height: virtualRow.size,
+              transform: `translateY(${String(virtualRow.start)}px)`,
+            };
+            if (row.kind === "group") {
+              return (
+                <div
+                  key={virtualRow.key}
+                  className={`token-list-row${dropTarget === row.path ? " token-list-row--drop" : ""}`}
+                  style={style}
+                  role="row"
+                  aria-level={row.depth + 1}
+                  aria-expanded={!row.collapsed}
+                  {...dragSourceProps(row.path)}
+                  {...dropTargetProps(row.path)}
+                >
+                  <div role="gridcell" aria-colspan={columns.length + 1} className="group-cell">
+                    <button
+                      type="button"
+                      className="group-row"
+                      style={{
+                        paddingLeft: `calc(var(--space-3) + ${String(row.depth)} * var(--space-4))`,
+                      }}
+                      onClick={() => {
+                        toggleCollapsed(row.path);
+                      }}
+                      data-testid={`group-${row.path}`}
+                    >
+                      <span className={`chevron${row.collapsed ? " chevron--collapsed" : ""}`}>
+                        ▼
+                      </span>
+                      {row.name}
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            const token = row.token;
             return (
               <div
                 key={virtualRow.key}
-                className={`token-list-row${dropTarget === row.path ? " token-list-row--drop" : ""}`}
-                style={style}
-                {...dragSourceProps(row.path)}
-                {...dropTargetProps(row.path)}
+                className="token-list-row token-list-row--grid"
+                style={{ ...style, gridTemplateColumns: gridTemplate }}
+                data-testid={`token-${token.pathString}`}
+                role="row"
+                aria-level={row.depth + 1}
+                aria-selected={selection?.set === set.name && selection.path === token.pathString}
+                {...dragSourceProps(token.pathString)}
+                // The whole row selects, like the old full-width row button.
+                // Editable cells stopPropagation.
+                onClick={() => {
+                  select({ set: set.name, path: token.pathString });
+                }}
               >
-                <button
-                  type="button"
-                  className="group-row"
-                  style={{
-                    paddingLeft: `calc(var(--space-3) + ${String(row.depth)} * var(--space-4))`,
-                  }}
-                  onClick={() => {
-                    toggleCollapsed(row.path);
-                  }}
-                  data-testid={`group-${row.path}`}
-                >
-                  <span className={`chevron${row.collapsed ? " chevron--collapsed" : ""}`}>▼</span>
-                  {row.name}
-                </button>
-              </div>
-            );
-          }
-          const token = row.token;
-          return (
-            <div
-              key={virtualRow.key}
-              className="token-list-row token-list-row--grid"
-              style={{ ...style, gridTemplateColumns: gridTemplate }}
-              data-testid={`token-${token.pathString}`}
-              {...dragSourceProps(token.pathString)}
-              // The whole row selects, like the old full-width row button.
-              // Editable cells will stopPropagation once they exist.
-              onClick={() => {
-                select({ set: set.name, path: token.pathString });
-              }}
-            >
-              {renaming === token.pathString ? (
-                <div
-                  className="token-cell token-cell--editing"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                  }}
-                >
-                  <input
-                    className="token-cell-input"
-                    defaultValue={row.name}
-                    autoFocus
-                    aria-label={`Rename ${token.pathString}`}
-                    data-testid={`rename-input-${token.pathString}`}
-                    onFocus={(event) => {
-                      event.target.select();
+                <div role="rowheader" className="token-name-cell">
+                  {renaming === token.pathString ? (
+                    <div
+                      className="token-cell token-cell--editing"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    >
+                      <input
+                        className="token-cell-input"
+                        defaultValue={row.name}
+                        autoFocus
+                        aria-label={`Rename ${token.pathString}`}
+                        data-testid={`rename-input-${token.pathString}`}
+                        onFocus={(event) => {
+                          event.target.select();
+                        }}
+                        onBlur={(event) => {
+                          commitRename(token.pathString, event.target.value);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter")
+                            commitRename(token.pathString, event.currentTarget.value);
+                          if (event.key === "Escape") setRenaming(undefined);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <TokenRow
+                      name={row.name}
+                      type={token.type}
+                      deprecated={token.deprecated !== undefined && token.deprecated !== false}
+                      selected={selection?.set === set.name && selection.path === token.pathString}
+                      indent={row.depth}
+                      onSelect={() => {
+                        select({ set: set.name, path: token.pathString });
+                      }}
+                      onDoubleClick={() => {
+                        setRenaming(token.pathString);
+                      }}
+                    />
+                  )}
+                </div>
+                {columns.map((column, index) => (
+                  <ValueCell
+                    key={column.key}
+                    document={document}
+                    fallbackSet={set}
+                    path={token.pathString}
+                    column={column}
+                    baseTheme={baseTheme}
+                    focused={
+                      focusedColumn === index + 1 &&
+                      selection?.set === set.name &&
+                      selection.path === token.pathString
+                    }
+                    editing={
+                      editingCell?.path === token.pathString && editingCell.column === column.key
+                    }
+                    onStartEdit={() => {
+                      setEditingCell({ path: token.pathString, column: column.key });
+                      select({ set: set.name, path: token.pathString });
                     }}
-                    onBlur={(event) => {
-                      commitRename(token.pathString, event.target.value);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter")
-                        commitRename(token.pathString, event.currentTarget.value);
-                      if (event.key === "Escape") setRenaming(undefined);
+                    onStopEdit={() => {
+                      setEditingCell(undefined);
                     }}
                   />
-                </div>
-              ) : (
-                <TokenRow
-                  name={row.name}
-                  type={token.type}
-                  deprecated={token.deprecated !== undefined && token.deprecated !== false}
-                  selected={selection?.set === set.name && selection.path === token.pathString}
-                  indent={row.depth}
-                  onSelect={() => {
-                    select({ set: set.name, path: token.pathString });
-                  }}
-                  onDoubleClick={() => {
-                    setRenaming(token.pathString);
-                  }}
-                />
-              )}
-              {columns.map((column) => (
-                <ValueCell
-                  key={column.key}
-                  document={document}
-                  fallbackSet={set}
-                  path={token.pathString}
-                  column={column}
-                  baseTheme={baseTheme}
-                  editing={
-                    editingCell?.path === token.pathString && editingCell.column === column.key
-                  }
-                  onStartEdit={() => {
-                    setEditingCell({ path: token.pathString, column: column.key });
-                    select({ set: set.name, path: token.pathString });
-                  }}
-                  onStopEdit={() => {
-                    setEditingCell(undefined);
-                  }}
-                />
-              ))}
-            </div>
-          );
-        })}
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
       <button
         type="button"

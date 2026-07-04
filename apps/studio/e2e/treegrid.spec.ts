@@ -146,6 +146,26 @@ test("the footer ＋ New token opens the creation dialog", async ({ page }) => {
   await expect(page.getByTestId("new-token-path")).toBeVisible();
 });
 
+test("keyboard: arrows move rows and columns, Enter edits the focused cell", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("token-colors.blue.500").click();
+  await page.getByTestId("token-list").focus();
+
+  // → moves the column focus onto the light cell; Enter opens its editor.
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toHaveClass(/token-cell--focused/);
+  await page.keyboard.press("Enter");
+  await page.getByTestId("cell-input-colors.blue.500-light").fill("#00ff00");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#00ff00");
+
+  // ↓ still moves the row selection; the treegrid role is exposed.
+  await page.getByTestId("token-list").focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByTestId("token-colors.blue.600")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("treegrid", { name: "Tokens" })).toBeVisible();
+});
+
 test("collapsing a group folds its rows; cells follow the filter's flat view", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toBeVisible();
