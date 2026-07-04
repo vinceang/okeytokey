@@ -18,7 +18,12 @@ import { isReference, referencePath } from "@okeytokey/schema";
 import { ColorSwatch, ReferencePill, TokenRow } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
-import { cmdRenameToken } from "../state/commands.js";
+import {
+  cmdCreateToken,
+  cmdDeleteToken,
+  cmdRenameToken,
+  cmdSetTokenValue,
+} from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 
@@ -104,19 +109,48 @@ function definingSet(document: TokenDocument, theme: Theme, path: string): strin
   return undefined;
 }
 
+/**
+ * Where a new override for this theme lands: the highest-precedence set in
+ * the theme's resolution order that the base theme does NOT resolve — for a
+ * dark theme layered over light, that's the `dark` set. Falls back to the
+ * theme's topmost set when the stacks fully overlap.
+ */
+function overrideSet(
+  document: TokenDocument,
+  theme: Theme,
+  baseTheme: Theme | undefined,
+): string | undefined {
+  const order = resolutionOrder(theme).filter((name) => document.sets.has(name));
+  const baseOrder = new Set(baseTheme ? resolutionOrder(baseTheme) : []);
+  for (let index = order.length - 1; index >= 0; index--) {
+    const name = order[index];
+    if (name !== undefined && !baseOrder.has(name)) return name;
+  }
+  return order.at(-1);
+}
+
 function ValueCell({
   document,
   fallbackSet,
   path,
   column,
   baseTheme,
+  editing,
+  onStartEdit,
+  onStopEdit,
 }: {
   document: TokenDocument;
   fallbackSet: TokenSet;
   path: string;
   column: GridColumn;
   baseTheme: Theme | undefined;
+  editing: boolean;
+  onStartEdit: () => void;
+  onStopEdit: () => void;
 }) {
+  const execute = useDocumentStore((state) => state.execute);
+  const [error, setError] = useState<string>();
+
   const definer = column.theme ? definingSet(document, column.theme, path) : fallbackSet.name;
   const token = definer !== undefined ? document.sets.get(definer)?.tokens.get(path) : undefined;
   if (definer === undefined || !token) {
@@ -129,10 +163,81 @@ function ValueCell({
 
   const { resolved } = safeResolve(column.resolver, path);
   const isBase = column.theme === undefined || column.theme === baseTheme;
-  const inherited =
-    !isBase && baseTheme !== undefined && definer === definingSet(document, baseTheme, path);
+  const baseDefiner = baseTheme ? definingSet(document, baseTheme, path) : undefined;
+  const inherited = !isBase && baseTheme !== undefined && definer === baseDefiner;
+  const overridden = !isBase && !inherited;
+  // Reset only makes sense when something remains to inherit from.
+  const resettable = overridden && baseDefiner !== undefined;
 
   const raw = token.value;
+  // Inline editing covers string/number raw values; composites (typography,
+  // shadow objects) keep their editors in the inspector.
+  const editable = typeof raw === "string" || typeof raw === "number";
+
+  const commit = (next: string) => {
+    setError(undefined);
+    const trimmed = next.trim();
+    if (trimmed === "" || trimmed === String(raw)) {
+      onStopEdit();
+      return;
+    }
+    try {
+      if (isBase || overridden) {
+        // Edit where the value already lives.
+        execute(cmdSetTokenValue(definer, path, trimmed));
+      } else {
+        // Inherited cell in a non-base theme (so column.theme is set):
+        // create a sparse override in the theme's own set — only this
+        // theme changes.
+        const target = overrideSet(document, column.theme, baseTheme);
+        if (target === undefined) throw new Error("No set to hold this theme's override");
+        execute(cmdCreateToken(target, path, { type: token.type, value: trimmed }));
+      }
+      onStopEdit();
+    } catch (commitError) {
+      setError(commitError instanceof Error ? commitError.message : String(commitError));
+    }
+  };
+
+  const reset = () => {
+    // Remove the override; the cell falls back to the inherited value.
+    execute(cmdDeleteToken(definer, path));
+  };
+
+  if (editing && editable) {
+    return (
+      <div
+        className={`token-cell token-cell--editing${error !== undefined ? " token-cell--error" : ""}`}
+        data-testid={`cell-${path}-${column.key}`}
+        title={error}
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
+      >
+        <input
+          className="token-cell-input"
+          defaultValue={String(raw)}
+          autoFocus
+          aria-label={`${path} value in ${column.label}`}
+          data-testid={`cell-input-${path}-${column.key}`}
+          onFocus={(event) => {
+            event.target.select();
+          }}
+          onBlur={(event) => {
+            commit(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") commit(event.currentTarget.value);
+            if (event.key === "Escape") {
+              setError(undefined);
+              onStopEdit();
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   const swatch =
     token.type === "color" &&
     resolved &&
@@ -147,14 +252,19 @@ function ValueCell({
   const title = isBase
     ? `Defined in ${definer}`
     : inherited
-      ? `Inherited from ${definer}`
+      ? `Inherited from ${definer} — edit to override just this theme`
       : `Overridden in ${definer}`;
 
   return (
     <div
-      className={`token-cell${inherited ? " token-cell--inherited" : ""}`}
+      className={`token-cell${inherited ? " token-cell--inherited" : ""}${editable ? " token-cell--editable" : ""}`}
       data-testid={`cell-${path}-${column.key}`}
       title={resolved ? `${title} — resolves to ${String(resolved.value)}` : title}
+      onClick={(event) => {
+        if (!editable) return;
+        event.stopPropagation();
+        onStartEdit();
+      }}
     >
       {swatch}
       {typeof raw === "string" && isReference(raw) ? (
@@ -163,6 +273,20 @@ function ValueCell({
         <span className="token-cell-text">
           {typeof raw === "string" || typeof raw === "number" ? String(raw) : `${token.type} {…}`}
         </span>
+      )}
+      {resettable && (
+        <button
+          type="button"
+          className="token-cell-reset"
+          title={`Reset — remove the override in ${definer} and inherit again`}
+          data-testid={`cell-reset-${path}-${column.key}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            reset();
+          }}
+        >
+          ↺
+        </button>
       )}
     </div>
   );
@@ -185,6 +309,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
 
   const execute = useDocumentStore((state) => state.execute);
   const [dropTarget, setDropTarget] = useState<string>();
+  const [editingCell, setEditingCell] = useState<{ path: string; column: string }>();
 
   const rows = useMemo(() => buildRows(set, collapsed, filter), [set, collapsed, filter]);
 
@@ -418,6 +543,16 @@ export function TokenList({ set, resolver }: TokenListProps) {
                   path={token.pathString}
                   column={column}
                   baseTheme={baseTheme}
+                  editing={
+                    editingCell?.path === token.pathString && editingCell.column === column.key
+                  }
+                  onStartEdit={() => {
+                    setEditingCell({ path: token.pathString, column: column.key });
+                    select({ set: set.name, path: token.pathString });
+                  }}
+                  onStopEdit={() => {
+                    setEditingCell(undefined);
+                  }}
                 />
               ))}
             </div>

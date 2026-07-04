@@ -269,6 +269,58 @@ a.sidebar-item {
   text-overflow: ellipsis;
 }
 
+.token-cell--editable {
+  cursor: text;
+}
+
+.token-cell--editable:hover {
+  background: var(--surface-hover);
+}
+
+.token-cell--editing {
+  padding: 0 var(--space-1);
+}
+
+.token-cell--error {
+  box-shadow: inset 0 0 0 1px var(--danger-500);
+}
+
+.token-cell-input {
+  width: 100%;
+  min-width: 0;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--accent-500);
+  border-radius: var(--radius-sm);
+  background: var(--surface-panel);
+  font: 400 var(--text-sm) var(--font-mono);
+  color: var(--text-primary);
+  outline: none;
+}
+
+/* Reset-to-inherited: appears on hover of an overridden cell. */
+.token-cell-reset {
+  margin-left: auto;
+  padding: 0 var(--space-1);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--text-md);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.token-cell:hover .token-cell-reset,
+.token-cell-reset:focus-visible {
+  opacity: 1;
+}
+
+.token-cell-reset:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
 .token-list-row--drop {
   box-shadow: inset 0 0 0 2px var(--accent-300);
   border-radius: var(--radius-sm);

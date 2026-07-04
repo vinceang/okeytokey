@@ -34,6 +34,71 @@ test("a dark-set override renders per column with different values", async ({ pa
   await expect(light).toHaveAttribute("title", /resolves to #f8fafc/);
 });
 
+test("editing a base cell edits in place; the inherited column follows", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("cell-colors.blue.500-light").click();
+  await page.getByTestId("cell-input-colors.blue.500-light").fill("#ff0000");
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#ff0000");
+  // Dark inherits the base edit — still dimmed, same value.
+  const dark = page.getByTestId("cell-colors.blue.500-dark");
+  await expect(dark).toContainText("#ff0000");
+  await expect(dark).toHaveClass(/token-cell--inherited/);
+
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#3b82f6");
+});
+
+test("editing an inherited dark cell creates a sparse override — only dark changes", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByTestId("set-dark")).toContainText("2"); // sparse: 2 overrides
+
+  await page.getByTestId("cell-colors.blue.500-dark").click();
+  await page.getByTestId("cell-input-colors.blue.500-dark").fill("#112233");
+  await page.keyboard.press("Enter");
+
+  const dark = page.getByTestId("cell-colors.blue.500-dark");
+  await expect(dark).toContainText("#112233");
+  await expect(dark).not.toHaveClass(/token-cell--inherited/);
+  await expect(dark).toHaveAttribute("title", /Overridden in dark/);
+  // Light is untouched; the override landed in the dark set (2 → 3 tokens).
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#3b82f6");
+  await expect(page.getByTestId("set-dark")).toContainText("3");
+
+  // One undo removes the override; dark inherits again.
+  await page.getByTestId("undo").click();
+  await expect(page.getByTestId("cell-colors.blue.500-dark")).toContainText("#3b82f6");
+  await expect(page.getByTestId("cell-colors.blue.500-dark")).toHaveClass(/token-cell--inherited/);
+  await expect(page.getByTestId("set-dark")).toContainText("2");
+});
+
+test("reset-to-inherited removes an override, undoably; Escape cancels an edit", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("set-semantic").click();
+
+  const dark = page.getByTestId("cell-semantic.background-dark");
+  await expect(dark).toContainText("colors.gray.900");
+  await dark.hover();
+  await page.getByTestId("cell-reset-semantic.background-dark").click();
+
+  // The override is gone: dark inherits light's value.
+  await expect(dark).toContainText("colors.gray.50");
+  await expect(dark).toHaveClass(/token-cell--inherited/);
+  await page.getByTestId("undo").click();
+  await expect(dark).toContainText("colors.gray.900");
+
+  // Escape cancels without committing.
+  await page.getByTestId("cell-semantic.action-light").click();
+  await page.getByTestId("cell-input-semantic.action-light").fill("#000000");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("cell-semantic.action-light")).toContainText("colors.blue.500");
+});
+
 test("collapsing a group folds its rows; cells follow the filter's flat view", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toBeVisible();
