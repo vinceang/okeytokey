@@ -181,7 +181,7 @@ a.sidebar-item {
 
 .token-scroll {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto; /* both axes: many theme columns scroll horizontally */
   contain: strict;
 }
 
@@ -194,6 +194,79 @@ a.sidebar-item {
   position: absolute;
   inset-inline: 0;
   top: 0;
+}
+
+/* --- Treegrid ------------------------------------------------------------- */
+/* The hierarchy lives in the Name column; each theme is a value column. The
+   header is sticky; rows share the same grid template via inline style. */
+.token-grid-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  align-items: center;
+  height: 30px;
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.token-grid-header-cell {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  font: 600 var(--text-xs) var(--font-sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.token-grid-header-cell--active {
+  color: var(--accent-700);
+}
+
+.token-grid-header-group {
+  font: 400 var(--text-xs) var(--font-sans);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.token-list-row--grid {
+  display: grid;
+  align-items: stretch;
+}
+
+.token-list-row--grid > .okey-token-row {
+  min-width: 0;
+}
+
+.token-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0 var(--space-3);
+  border-left: 1px solid var(--line-subtle);
+  font: 400 var(--text-sm) var(--font-mono);
+  color: var(--text-secondary);
+  overflow: hidden;
+}
+
+/* Inherited from the base theme — present, but not a decision made here. */
+.token-cell--inherited {
+  opacity: 0.5;
+}
+
+.token-cell--missing {
+  color: var(--text-tertiary);
+}
+
+.token-cell-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .token-list-row--drop {

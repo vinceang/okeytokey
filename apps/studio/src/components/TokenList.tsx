@@ -2,11 +2,15 @@ import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import {
+  createResolver,
   gamutWarning,
   isColor,
   parseColor,
+  resolutionOrder,
   type JsonMap,
   type Resolver,
+  type Theme,
+  type TokenDocument,
   type TokenNode,
   type TokenSet,
 } from "@okeytokey/core";
@@ -18,7 +22,19 @@ import { cmdRenameToken } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 
+/**
+ * The token treegrid: the group hierarchy stays in the Name column (expand/
+ * collapse, drag, keyboard nav), and each theme renders as a value column —
+ * Figma Variables' mental model over DTCG's set-based storage. A cell shows
+ * the value the theme resolves; cells inherited from the base theme render
+ * dimmed, explicit overrides at full strength. Read layer only — editing
+ * still flows through the inspector (cell editing arrives in the next phase).
+ */
+
 const ROW_HEIGHT = 32;
+const HEADER_HEIGHT = 30;
+const NAME_COL_MIN = 240;
+const VALUE_COL_MIN = 160;
 
 type Row =
   | { kind: "group"; path: string; name: string; depth: number; collapsed: boolean }
@@ -65,10 +81,58 @@ function buildRows(set: TokenSet, collapsed: ReadonlySet<string>, filter: string
   return rows;
 }
 
-function TokenPreview({ token, resolver }: { token: TokenNode; resolver: Resolver }) {
-  const { resolved } = safeResolve(resolver, token.pathString);
-  const raw = token.value;
+/** A value column: a theme, or the plain document view when no themes exist. */
+interface GridColumn {
+  readonly key: string;
+  readonly label: string;
+  readonly theme?: Theme;
+  readonly resolver: Resolver;
+}
 
+/**
+ * The set that defines `path` under `theme`: the highest-precedence set in
+ * the theme's resolution order that holds the token. This is where an edit
+ * to this cell would land — and comparing it against the base theme's
+ * defining set is what distinguishes an override from an inherited value.
+ */
+function definingSet(document: TokenDocument, theme: Theme, path: string): string | undefined {
+  const order = resolutionOrder(theme);
+  for (let index = order.length - 1; index >= 0; index--) {
+    const name = order[index];
+    if (name !== undefined && document.sets.get(name)?.tokens.has(path)) return name;
+  }
+  return undefined;
+}
+
+function ValueCell({
+  document,
+  fallbackSet,
+  path,
+  column,
+  baseTheme,
+}: {
+  document: TokenDocument;
+  fallbackSet: TokenSet;
+  path: string;
+  column: GridColumn;
+  baseTheme: Theme | undefined;
+}) {
+  const definer = column.theme ? definingSet(document, column.theme, path) : fallbackSet.name;
+  const token = definer !== undefined ? document.sets.get(definer)?.tokens.get(path) : undefined;
+  if (definer === undefined || !token) {
+    return (
+      <div className="token-cell token-cell--missing" data-testid={`cell-${path}-${column.key}`}>
+        —
+      </div>
+    );
+  }
+
+  const { resolved } = safeResolve(column.resolver, path);
+  const isBase = column.theme === undefined || column.theme === baseTheme;
+  const inherited =
+    !isBase && baseTheme !== undefined && definer === definingSet(document, baseTheme, path);
+
+  const raw = token.value;
   const swatch =
     token.type === "color" &&
     resolved &&
@@ -80,21 +144,27 @@ function TokenPreview({ token, resolver }: { token: TokenNode; resolver: Resolve
       />
     ) : undefined;
 
-  if (typeof raw === "string" && isReference(raw)) {
-    return (
-      <>
-        {swatch}
-        <ReferencePill path={referencePath(raw)} broken={resolved === undefined} />
-      </>
-    );
-  }
-  const text =
-    typeof raw === "string" || typeof raw === "number" ? String(raw) : `${token.type} {…}`;
+  const title = isBase
+    ? `Defined in ${definer}`
+    : inherited
+      ? `Inherited from ${definer}`
+      : `Overridden in ${definer}`;
+
   return (
-    <>
+    <div
+      className={`token-cell${inherited ? " token-cell--inherited" : ""}`}
+      data-testid={`cell-${path}-${column.key}`}
+      title={resolved ? `${title} — resolves to ${String(resolved.value)}` : title}
+    >
       {swatch}
-      <span>{text}</span>
-    </>
+      {typeof raw === "string" && isReference(raw) ? (
+        <ReferencePill path={referencePath(raw)} broken={resolved === undefined} />
+      ) : (
+        <span className="token-cell-text">
+          {typeof raw === "string" || typeof raw === "number" ? String(raw) : `${token.type} {…}`}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -104,9 +174,12 @@ export interface TokenListProps {
 }
 
 export function TokenList({ set, resolver }: TokenListProps) {
+  const document = useDocumentStore((state) => state.document);
+  const themes = useDocumentStore((state) => state.themes);
   const filter = useUiStore((state) => state.filter);
   const collapsed = useUiStore((state) => state.collapsed);
   const selection = useUiStore((state) => state.selection);
+  const activeTheme = useUiStore((state) => state.activeTheme);
   const select = useUiStore((state) => state.select);
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
 
@@ -114,6 +187,33 @@ export function TokenList({ set, resolver }: TokenListProps) {
   const [dropTarget, setDropTarget] = useState<string>();
 
   const rows = useMemo(() => buildRows(set, collapsed, filter), [set, collapsed, filter]);
+
+  // Themes become value columns; with none defined, one plain "Value" column
+  // (the passed resolver already honors document order). Sets a theme
+  // references but the document no longer holds (deleted, renamed) are
+  // filtered out — same guard as useResolver — so the grid never crashes on
+  // a stale theme definition.
+  const columns = useMemo<GridColumn[]>(() => {
+    const usable = themes
+      .map((theme) => ({
+        theme,
+        order: resolutionOrder(theme).filter((name) => document.sets.has(name)),
+      }))
+      .filter((entry) => entry.order.length > 0);
+    if (usable.length === 0) return [{ key: "value", label: "Value", resolver }];
+    return usable.map(({ theme, order }) => ({
+      key: theme.name,
+      label: theme.name,
+      theme,
+      resolver: createResolver(document, { setOrder: order }),
+    }));
+  }, [themes, document, resolver]);
+
+  const baseTheme = columns[0]?.theme;
+  const gridTemplate = `minmax(${String(NAME_COL_MIN)}px, 1.6fr) repeat(${String(
+    columns.length,
+  )}, minmax(${String(VALUE_COL_MIN)}px, 1fr))`;
+  const gridMinWidth = NAME_COL_MIN + columns.length * VALUE_COL_MIN;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +273,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: 12,
+    scrollPaddingStart: HEADER_HEIGHT,
   });
 
   // Keyboard-first: arrows move the selection across token rows (groups are
@@ -227,7 +328,31 @@ export function TokenList({ set, resolver }: TokenListProps) {
       onKeyDown={onKeyDown}
       {...dropTargetProps(undefined)}
     >
-      <div className="token-list-inner" style={{ height: virtualizer.getTotalSize() }}>
+      <div
+        className="token-grid-header"
+        style={{ gridTemplateColumns: gridTemplate, minWidth: gridMinWidth }}
+        data-testid="token-grid-header"
+      >
+        <div className="token-grid-header-cell">Name</div>
+        {columns.map((column) => (
+          <div
+            key={column.key}
+            className={`token-grid-header-cell${
+              activeTheme === column.key ? " token-grid-header-cell--active" : ""
+            }`}
+            data-testid={`col-${column.key}`}
+          >
+            {column.label}
+            {column.theme?.group !== undefined && (
+              <span className="token-grid-header-group">{column.theme.group}</span>
+            )}
+          </div>
+        ))}
+      </div>
+      <div
+        className="token-list-inner"
+        style={{ height: virtualizer.getTotalSize(), minWidth: gridMinWidth }}
+      >
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const row = rows[virtualRow.index];
           if (!row) return null;
@@ -265,10 +390,15 @@ export function TokenList({ set, resolver }: TokenListProps) {
           return (
             <div
               key={virtualRow.key}
-              className="token-list-row"
-              style={style}
+              className="token-list-row token-list-row--grid"
+              style={{ ...style, gridTemplateColumns: gridTemplate }}
               data-testid={`token-${token.pathString}`}
               {...dragSourceProps(token.pathString)}
+              // The whole row selects, like the old full-width row button.
+              // Editable cells will stopPropagation once they exist.
+              onClick={() => {
+                select({ set: set.name, path: token.pathString });
+              }}
             >
               <TokenRow
                 name={row.name}
@@ -276,11 +406,20 @@ export function TokenList({ set, resolver }: TokenListProps) {
                 deprecated={token.deprecated !== undefined && token.deprecated !== false}
                 selected={selection?.set === set.name && selection.path === token.pathString}
                 indent={row.depth}
-                preview={<TokenPreview token={token} resolver={resolver} />}
                 onSelect={() => {
                   select({ set: set.name, path: token.pathString });
                 }}
               />
+              {columns.map((column) => (
+                <ValueCell
+                  key={column.key}
+                  document={document}
+                  fallbackSet={set}
+                  path={token.pathString}
+                  column={column}
+                  baseTheme={baseTheme}
+                />
+              ))}
             </div>
           );
         })}
