@@ -113,8 +113,10 @@ function definingSet(document: TokenDocument, theme: Theme, path: string): strin
 /**
  * Where a new override for this theme lands: the highest-precedence set in
  * the theme's resolution order that the base theme does NOT resolve — for a
- * dark theme layered over light, that's the `dark` set. Falls back to the
- * theme's topmost set when the stacks fully overlap.
+ * dark theme layered over light, that's the `dark` set. When the surviving
+ * stacks fully overlap (e.g. the theme's own set was deleted), there is no
+ * set that affects only this theme — return undefined rather than silently
+ * writing into a shared set and changing every theme at once.
  */
 function overrideSet(
   document: TokenDocument,
@@ -127,7 +129,7 @@ function overrideSet(
     const name = order[index];
     if (name !== undefined && !baseOrder.has(name)) return name;
   }
-  return order.at(-1);
+  return undefined;
 }
 
 function ValueCell({
@@ -197,7 +199,12 @@ function ValueCell({
         // create a sparse override in the theme's own set — only this
         // theme changes.
         const target = overrideSet(document, column.theme, baseTheme);
-        if (target === undefined) throw new Error("No set to hold this theme's override");
+        if (target === undefined) {
+          throw new Error(
+            `Theme "${column.label}" has no set of its own to hold an override — ` +
+              `its override set may have been deleted. Check the theme's sets in its ⋮ menu.`,
+          );
+        }
         execute(cmdCreateToken(target, path, { type: token.type, value: trimmed }));
       }
       onStopEdit();

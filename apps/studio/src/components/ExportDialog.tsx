@@ -29,9 +29,29 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
 
   const output = useMemo(() => {
     try {
-      const theme = themes.find((candidate) => candidate.name === themeName);
+      const selected = themes.find((candidate) => candidate.name === themeName);
+      // A theme can reference sets the document no longer holds (the set was
+      // deleted or renamed; themes deliberately survive so undo can restore
+      // the set). Export what still resolves — same guard as the grid and
+      // useResolver — and say so, instead of refusing outright.
+      const missing =
+        selected?.sets
+          .filter((entry) => !tokenDocument.sets.has(entry.set))
+          .map((entry) => entry.set) ?? [];
+      const theme =
+        selected && missing.length > 0
+          ? {
+              ...selected,
+              sets: selected.sets.filter((entry) => tokenDocument.sets.has(entry.set)),
+            }
+          : selected;
       const entries = transformEntries(resolveForExport(tokenDocument, theme), { pxToRem });
-      return formatTokens(format, entries, { outputReferences });
+      const body = formatTokens(format, entries, { outputReferences });
+      return missing.length > 0
+        ? `/* Theme "${themeName}" references missing set(s): ${missing.join(
+            ", ",
+          )} — skipped. Restore or remove them in the theme's ⋮ menu. */\n${body}`
+        : body;
     } catch (error) {
       return `/* ${error instanceof Error ? error.message : String(error)} */`;
     }

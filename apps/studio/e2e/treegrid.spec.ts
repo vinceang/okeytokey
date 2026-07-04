@@ -166,6 +166,45 @@ test("keyboard: arrows move rows and columns, Enter edits the focused cell", asy
   await expect(page.getByRole("treegrid", { name: "Tokens" })).toBeVisible();
 });
 
+test("a theme whose set was deleted still exports (with a warning) and refuses shared-set overrides", async ({
+  page,
+}) => {
+  await page.goto("/");
+  // Delete the dark set: the dark THEME survives (undo can restore the set).
+  await page.getByTestId("set-menu-dark").click();
+  page.once("dialog", (dialog) => {
+    void dialog.accept();
+  });
+  await page.getByTestId("set-delete-dark").click();
+  await expect(page.getByTestId("set-dark")).toHaveCount(0);
+
+  // Export under the stale dark theme: valid CSS plus an honest warning —
+  // not the raw "Unknown token set" refusal.
+  await page.getByTestId("open-export").click();
+  await page.getByTestId("export-theme").selectOption("dark");
+  const preview = page.getByTestId("export-preview");
+  await expect(preview).toContainText("references missing set(s): dark");
+  await expect(preview).toContainText(":root {");
+  await expect(preview).toContainText("--colors-blue-500: #3b82f6;");
+  await page.keyboard.press("Escape");
+
+  // Editing a dark cell can't silently write into a set shared with light —
+  // it errors instead of changing both themes at once.
+  await page.getByTestId("cell-colors.blue.500-dark").click();
+  await page.getByTestId("cell-input-colors.blue.500-dark").fill("#112233");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("cell-colors.blue.500-dark")).toHaveClass(/token-cell--error/);
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("cell-colors.blue.500-light")).toContainText("#3b82f6");
+
+  // Undoing the delete restores the set; the theme snaps back to life.
+  await page.getByTestId("undo").click();
+  await page.getByTestId("open-export").click();
+  await page.getByTestId("export-theme").selectOption("dark");
+  await expect(preview).not.toContainText("missing set");
+  await expect(preview).toContainText("--semantic-background: #0f172a;");
+});
+
 test("collapsing a group folds its rows; cells follow the filter's flat view", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("cell-colors.blue.500-light")).toBeVisible();
