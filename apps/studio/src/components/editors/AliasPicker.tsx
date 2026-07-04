@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { Resolver } from "@okeytokey/core";
-import { TextInput, TokenTypeIcon } from "@okeytokey/ui";
+import { isColor, type Resolver } from "@okeytokey/core";
+import { ColorSwatch, TextInput, TokenTypeIcon } from "@okeytokey/ui";
 
 import { safeResolve } from "../../hooks/use-resolver.js";
 
@@ -89,7 +89,12 @@ export function AliasPicker({ resolver, excludePath, onPick, onClose }: AliasPic
           >
             {option.type && <TokenTypeIcon type={option.type} />}
             {option.path}
-            {option.value !== "" && <span className="resolved">{option.value}</span>}
+            {option.value !== "" && (
+              <span className="resolved">
+                {isColor(option.value) && <ColorSwatch color={option.value} />}
+                {option.value}
+              </span>
+            )}
           </button>
         ))}
         {options.length === 0 && <p className="empty-state">No tokens match.</p>}
