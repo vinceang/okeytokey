@@ -50,7 +50,7 @@ test("native color picker commits and alias popover closes on outside click", as
   // Alias popover: opens from the picker button, closes on an outside click.
   await page.getByTestId("make-alias").click();
   await expect(page.getByTestId("alias-popover")).toBeVisible();
-  await page.getByTestId("inspector").getByRole("heading", { name: "500" }).click();
+  await page.getByTestId("inspector-token-name").click();
   await expect(page.getByTestId("alias-popover")).not.toBeVisible();
 });
 

@@ -19,28 +19,23 @@ test("diagnostics panel reports a broken reference and navigates to it", async (
   await expect(page.getByTestId("inspector")).toContainText("bad.alias");
 });
 
-test("rename-with-refactor updates references, with preview", async ({ page }) => {
+test("inline rename updates references across sets", async ({ page }) => {
   await page.goto("/");
 
-  // semantic.action references colors.blue.500 in the starter document.
+  // semantic.action references colors.blue.500 — rename the leaf 500 → primary.
   await page.getByTestId("token-colors.blue.500").click();
-  await page.getByTestId("rename-token").click();
-  await page.getByTestId("rename-input").fill("colors.brand.500");
+  await page.getByTestId("inspector-token-name").click();
+  await page.getByTestId("rename-token").fill("primary");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("token-colors.blue.primary")).toBeVisible();
 
-  // Preview lists the reference edit before anything is applied.
-  await expect(page.getByTestId("rename-preview")).toContainText("semantic");
-  await expect(page.getByTestId("rename-preview")).toContainText("action");
-
-  await page.getByTestId("confirm-rename").click();
-  await expect(page.getByTestId("token-colors.brand.500")).toBeVisible();
-
-  // The alias in the semantic set now points at the new path and resolves.
+  // The alias in the semantic set now points at the renamed path and resolves.
   await page.getByTestId("set-semantic").click();
   await page.getByTestId("token-semantic.action").click();
-  await expect(page.getByTestId("inspector")).toContainText("colors.brand.500");
+  await expect(page.getByTestId("inspector")).toContainText("colors.blue.primary");
   await expect(page.getByTestId("resolved-preview")).toContainText("#3b82f6");
 
-  // One undo reverses the whole refactor.
+  // One undo reverses the rename and the reference update together.
   await page.getByTestId("undo").click();
   await expect(page.getByTestId("inspector")).toContainText("colors.blue.500");
 });

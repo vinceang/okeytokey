@@ -817,6 +817,46 @@ a.sidebar-item {
   word-break: break-word;
 }
 
+.inspector-token-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: text;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+.inspector-rename-icon {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity 100ms;
+}
+.inspector-token-name:hover .inspector-rename-icon {
+  opacity: 1;
+}
+.inspector-rename-input {
+  flex: 1;
+  margin: var(--space-1) 0 0;
+  padding: 2px var(--space-1);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--surface-app);
+  border: 1px solid var(--border-focus, #3b82f6);
+  border-radius: var(--radius-sm);
+  outline: none;
+  width: 100%;
+}
+
 .inspector-section {
   display: flex;
   flex-direction: column;

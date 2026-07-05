@@ -17,13 +17,13 @@ import {
   cmdCreateTokenInSet,
   cmdDeleteToken,
   cmdDeprecate,
+  cmdRenameToken,
   cmdSetTokenMeta,
   cmdSetTokenValue,
 } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore, type TokenSelection } from "../state/ui-store.js";
 import { DecisionContextEditor } from "./DecisionContextEditor.js";
-import { RenameDialog } from "./RenameDialog.js";
 import { UsagePanel } from "./UsagePanel.js";
 import { ValueEditor } from "./editors/ValueEditor.js";
 
@@ -119,6 +119,21 @@ export function Inspector({
     }
   };
 
+  const commitRename = (input: string) => {
+    setRenaming(false);
+    const next = input.trim();
+    if (next === "") return;
+    const parent = token.pathString.slice(0, Math.max(0, token.pathString.lastIndexOf(".")));
+    const nextPath = parent === "" ? next : `${parent}.${next}`;
+    if (nextPath === token.pathString) return;
+    try {
+      execute(cmdRenameToken(token.pathString, nextPath));
+      select({ set: selection.set, path: nextPath });
+    } catch (renameError) {
+      window.alert(renameError instanceof Error ? renameError.message : String(renameError));
+    }
+  };
+
   const { resolved, error: resolutionError } = safeResolve(resolver, token.pathString);
   const resolvedText =
     resolved === undefined
@@ -146,17 +161,40 @@ export function Inspector({
           </button>
         </div>
         <div className="editor-row">
-          <h2>{token.name}</h2>
-          <Button
-            variant="ghost"
-            title="Rename everywhere (updates all references)"
-            data-testid="rename-token"
-            onClick={() => {
-              setRenaming(true);
-            }}
-          >
-            Rename…
-          </Button>
+          {renaming ? (
+            <input
+              className="inspector-rename-input"
+              defaultValue={token.name}
+              autoFocus
+              aria-label={`Rename ${token.pathString}`}
+              data-testid="rename-token"
+              onFocus={(event) => {
+                event.target.select();
+              }}
+              onBlur={(event) => {
+                commitRename(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitRename(event.currentTarget.value);
+                if (event.key === "Escape") setRenaming(false);
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="inspector-token-name"
+              title="Click to rename"
+              data-testid="inspector-token-name"
+              onClick={() => {
+                setRenaming(true);
+              }}
+            >
+              <span>{token.name}</span>
+              <span className="inspector-rename-icon" aria-hidden="true">
+                ✏
+              </span>
+            </button>
+          )}
         </div>
         <div className="editor-row" style={{ marginTop: "var(--space-2)" }}>
           <TokenTypeIcon type={token.type} />
@@ -378,16 +416,6 @@ export function Inspector({
           </Button>
         </div>
       </section>
-
-      {renaming && (
-        <RenameDialog
-          path={token.pathString}
-          setName={selection.set}
-          onClose={() => {
-            setRenaming(false);
-          }}
-        />
-      )}
     </aside>
   );
 }
