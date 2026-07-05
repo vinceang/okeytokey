@@ -561,25 +561,32 @@ a.sidebar-item {
   background: var(--surface-hover);
 }
 
-/* ＋ new token, after the last row (Figma's "Create variable"). */
-.token-grid-footer {
+/* Centered New group / New token button pair, after the last row. */
+.token-grid-actions {
   position: sticky;
   left: 0;
-  display: block;
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: none;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
   border-top: 1px solid var(--line-subtle);
+  background: var(--surface-app);
+}
+
+.token-grid-action-btn {
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--radius-sm);
   background: transparent;
   font: 500 var(--text-sm) var(--font-sans);
   color: var(--text-tertiary);
-  text-align: left;
   cursor: pointer;
 }
 
-.token-grid-footer:hover {
+.token-grid-action-btn:hover {
   color: var(--text-primary);
   background: var(--surface-hover);
+  border-color: var(--line-default);
 }
 
 .token-list-row--drop {

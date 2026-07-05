@@ -247,7 +247,9 @@ export function NewTokenDialog({
   const title =
     parentPath !== undefined
       ? `${intent === "subgroup" ? "New subgroup" : "New token"} in ${parentPath}`
-      : `New token in ${setName}`;
+      : intent === "subgroup"
+        ? `New group in ${setName}`
+        : `New token in ${setName}`;
 
   return (
     <Dialog title={title} onClose={onClose}>

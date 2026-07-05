@@ -129,16 +129,6 @@ export function App() {
           >
             ↪ Redo
           </Button>
-          <Button
-            variant="primary"
-            disabled={currentSet === undefined}
-            onClick={() => {
-              openDialog("new-token");
-            }}
-            data-testid="new-token"
-          >
-            New token
-          </Button>
         </div>
         <div className="studio-body">
           <div className="studio-content">

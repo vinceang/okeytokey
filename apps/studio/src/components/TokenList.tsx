@@ -430,6 +430,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
   const openDialog = useUiStore((state) => state.openDialog);
   const openNewTokenAt = useUiStore((state) => state.openNewTokenAt);
+  const openNewGroupDialog = useUiStore((state) => state.openNewGroupDialog);
 
   const execute = useDocumentStore((state) => state.execute);
   const [dropTarget, setDropTarget] = useState<string>();
@@ -692,6 +693,28 @@ export function TokenList({ set, resolver }: TokenListProps) {
               ? "Try a different search — names and values are both matched."
               : "Add your first token with “New token”, or import a DTCG file."}
           </p>
+        </div>
+        <div className="token-grid-actions">
+          <button
+            type="button"
+            className="token-grid-action-btn"
+            data-testid="new-group"
+            onClick={() => {
+              openNewGroupDialog();
+            }}
+          >
+            ＋ New group
+          </button>
+          <button
+            type="button"
+            className="token-grid-action-btn"
+            data-testid="new-token"
+            onClick={() => {
+              openDialog("new-token");
+            }}
+          >
+            ＋ New token
+          </button>
         </div>
       </div>
     );
@@ -1136,16 +1159,28 @@ export function TokenList({ set, resolver }: TokenListProps) {
           })}
         </div>
       </div>
-      <button
-        type="button"
-        className="token-grid-footer"
-        data-testid="grid-new-token"
-        onClick={() => {
-          openDialog("new-token");
-        }}
-      >
-        ＋ New token
-      </button>
+      <div className="token-grid-actions">
+        <button
+          type="button"
+          className="token-grid-action-btn"
+          data-testid="new-group"
+          onClick={() => {
+            openNewGroupDialog();
+          }}
+        >
+          ＋ New group
+        </button>
+        <button
+          type="button"
+          className="token-grid-action-btn"
+          data-testid="new-token"
+          onClick={() => {
+            openDialog("new-token");
+          }}
+        >
+          ＋ New token
+        </button>
+      </div>
       {editingTheme && (
         <ThemeDialog
           theme={editingTheme}

@@ -218,7 +218,7 @@ test("double-click renames inline; references follow via the refactor", async ({
 
 test("the footer ＋ New token opens the creation dialog", async ({ page }) => {
   await page.goto("/");
-  await page.getByTestId("grid-new-token").click();
+  await page.getByTestId("new-token").click();
   await expect(page.getByTestId("new-token-path")).toBeVisible();
 });
 

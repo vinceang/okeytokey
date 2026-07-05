@@ -16,7 +16,8 @@ export type StudioDialog =
  * just tweaks the copy (a subgroup nudges toward a nested `group.leaf`).
  */
 export interface NewTokenContext {
-  readonly parentPath: string;
+  /** Undefined when opening the New Token/Group dialog without a group scope. */
+  readonly parentPath?: string;
   readonly intent: "token" | "subgroup";
 }
 
@@ -43,6 +44,8 @@ export interface UiState {
   openDialog: (dialog: StudioDialog | undefined) => void;
   /** Open the New Token dialog scoped to a group (read-only parent prefix). */
   openNewTokenAt: (parentPath: string, intent: "token" | "subgroup") => void;
+  /** Open the New Token dialog in "new group" mode (no parent prefix). */
+  openNewGroupDialog: () => void;
   openInspector: () => void;
   closeInspector: () => void;
 }
@@ -82,6 +85,9 @@ export const useUiStore = create<UiState>()((set, get) => ({
   },
   openNewTokenAt(parentPath, intent) {
     set({ dialog: "new-token", newTokenContext: { parentPath, intent } });
+  },
+  openNewGroupDialog() {
+    set({ dialog: "new-token", newTokenContext: { intent: "subgroup" } });
   },
   openInspector() {
     set({ inspectorOpen: true });
