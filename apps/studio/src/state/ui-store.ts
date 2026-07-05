@@ -31,6 +31,9 @@ export interface UiState {
   dialog: StudioDialog | undefined;
   /** Set only while the New Token dialog is opened against a specific group. */
   newTokenContext: NewTokenContext | undefined;
+  /** Whether the slide-in inspector panel is visible. Defaults true so clicking
+   *  a token immediately shows the panel (same as the old permanent column). */
+  inspectorOpen: boolean;
 
   setActiveSet: (name: string | undefined) => void;
   setActiveTheme: (name: string | undefined) => void;
@@ -40,6 +43,8 @@ export interface UiState {
   openDialog: (dialog: StudioDialog | undefined) => void;
   /** Open the New Token dialog scoped to a group (read-only parent prefix). */
   openNewTokenAt: (parentPath: string, intent: "token" | "subgroup") => void;
+  openInspector: () => void;
+  closeInspector: () => void;
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -50,6 +55,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   collapsed: new Set<string>(),
   dialog: undefined,
   newTokenContext: undefined,
+  inspectorOpen: true,
 
   setActiveSet(name) {
     set({ activeSet: name, selection: undefined, collapsed: new Set() });
@@ -76,5 +82,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
   },
   openNewTokenAt(parentPath, intent) {
     set({ dialog: "new-token", newTokenContext: { parentPath, intent } });
+  },
+  openInspector() {
+    set({ inspectorOpen: true });
+  },
+  closeInspector() {
+    set({ inspectorOpen: false });
   },
 }));

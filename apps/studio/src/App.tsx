@@ -36,6 +36,8 @@ export function App() {
   const dialog = useUiStore((state) => state.dialog);
   const openDialog = useUiStore((state) => state.openDialog);
   const newTokenContext = useUiStore((state) => state.newTokenContext);
+  const inspectorOpen = useUiStore((state) => state.inspectorOpen);
+  const closeInspector = useUiStore((state) => state.closeInspector);
 
   const resolver = useResolver();
 
@@ -138,25 +140,23 @@ export function App() {
             New token
           </Button>
         </div>
-        {currentSet ? (
-          <TokenList set={currentSet} resolver={resolver} />
-        ) : (
-          <div className="empty-state">
-            <h3>No set selected</h3>
-            <p>Create a token set in the sidebar to get started.</p>
+        <div className="studio-body">
+          <div className="studio-content">
+            {currentSet ? (
+              <TokenList set={currentSet} resolver={resolver} />
+            ) : (
+              <div className="empty-state">
+                <h3>No set selected</h3>
+                <p>Create a token set in the sidebar to get started.</p>
+              </div>
+            )}
+            <DiagnosticsPanel />
           </div>
-        )}
-        <DiagnosticsPanel />
+          {inspectorOpen && selection && (
+            <Inspector selection={selection} resolver={resolver} onClose={closeInspector} />
+          )}
+        </div>
       </main>
-      {selection ? (
-        <Inspector selection={selection} resolver={resolver} />
-      ) : (
-        <aside className="studio-inspector">
-          <p className="empty-state">
-            Select a token to inspect and edit it. Press ⌘K for the command palette.
-          </p>
-        </aside>
-      )}
       {dialog === "new-token" && currentSet && (
         <NewTokenDialog
           setName={currentSet.name}

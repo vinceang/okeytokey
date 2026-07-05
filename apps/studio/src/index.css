@@ -7,7 +7,7 @@ body {
 
 .studio {
   display: grid;
-  grid-template-columns: 240px 1fr 320px;
+  grid-template-columns: 240px 1fr;
   height: 100vh;
 }
 
@@ -169,6 +169,24 @@ a.sidebar-item {
   min-width: 0;
   background: var(--surface-panel);
   box-shadow: var(--shadow-raised);
+}
+
+/* Body below the toolbar — flex ROW so the inspector panel sits alongside the
+   token list rather than overlaying it (avoids blocking grid column headers). */
+.studio-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The column containing TokenList + DiagnosticsPanel; shrinks when inspector opens. */
+.studio-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .studio-toolbar {
@@ -613,14 +631,142 @@ a.sidebar-item {
   color: var(--text-primary);
 }
 
-/* --- Inspector -------------------------------------------------------------- */
-.studio-inspector {
+/* --- Inspector panel (slide-in overlay) ------------------------------------- */
+@keyframes inspector-slide-in {
+  from {
+    max-width: 0;
+  }
+  to {
+    max-width: 320px;
+  }
+}
+
+.inspector-panel {
+  flex: none;
+  width: 320px;
+  max-width: 320px;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--surface-app);
+  box-shadow: -2px 0 12px hsl(0 0% 0% / 0.08);
+  animation: inspector-slide-in 180ms ease-out;
+}
+
+.inspector-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.inspector-close-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.inspector-close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* Inspector trigger — the sliders icon in the trailing 36px grid column. */
+.inspector-trigger-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--line-subtle);
+}
+
+.inspector-trigger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.1s,
+    color 0.1s;
+}
+
+.token-list-row:hover .inspector-trigger-btn,
+.inspector-trigger-cell--active .inspector-trigger-btn,
+.inspector-trigger-btn:focus-visible {
+  opacity: 1;
+}
+
+.inspector-trigger-btn:hover,
+.inspector-trigger-cell--active .inspector-trigger-btn {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+/* Values-by-theme section inside the inspector panel. */
+.inspector-values-label {
+  margin: 0 0 var(--space-2);
+  font: 600 var(--text-xs) var(--font-sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.inspector-theme-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.inspector-theme-label {
+  flex: 0 0 72px;
+  font: 400 var(--text-sm) var(--font-sans);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspector-theme-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Sidebar hint — shown when nothing is selected. */
+.sidebar-hint {
+  margin-top: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.sidebar-hint strong {
+  color: var(--text-secondary);
 }
 
 .inspector-header .token-path {

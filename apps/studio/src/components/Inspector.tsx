@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { gamutWarning, isColor, parseColor, type Resolver } from "@okeytokey/core";
+import {
+  createResolver,
+  gamutWarning,
+  isColor,
+  parseColor,
+  resolutionOrder,
+  type Resolver,
+  type Theme,
+  type TokenDocument,
+} from "@okeytokey/core";
 import { Button, ColorSwatch, Field, TextInput, TokenTypeIcon } from "@okeytokey/ui";
 
 import { safeResolve } from "../hooks/use-resolver.js";
 import {
+  cmdCreateTokenInSet,
   cmdDeleteToken,
   cmdDeprecate,
   cmdSetTokenMeta,
@@ -17,6 +27,32 @@ import { RenameDialog } from "./RenameDialog.js";
 import { UsagePanel } from "./UsagePanel.js";
 import { ValueEditor } from "./editors/ValueEditor.js";
 
+interface ThemeColumn {
+  readonly key: string;
+  readonly label: string;
+  readonly theme: Theme | undefined;
+  readonly resolver: Resolver;
+}
+
+function definingSet(document: TokenDocument, theme: Theme, path: string): string | undefined {
+  const order = resolutionOrder(theme);
+  for (let i = order.length - 1; i >= 0; i--) {
+    const name = order[i];
+    if (name !== undefined && document.sets.get(name)?.tokens.has(path)) return name;
+  }
+  return undefined;
+}
+
+function overrideSet(theme: Theme, baseTheme: Theme | undefined): string | undefined {
+  const order = resolutionOrder(theme);
+  const baseOrder = new Set(baseTheme ? resolutionOrder(baseTheme) : []);
+  for (let i = order.length - 1; i >= 0; i--) {
+    const name = order[i];
+    if (name !== undefined && !baseOrder.has(name)) return name;
+  }
+  return undefined;
+}
+
 function LifecycleBadge({ lifecycle }: { lifecycle: string }) {
   return <span className={`lifecycle-badge lifecycle-badge--${lifecycle}`}>{lifecycle}</span>;
 }
@@ -24,20 +60,51 @@ function LifecycleBadge({ lifecycle }: { lifecycle: string }) {
 export function Inspector({
   selection,
   resolver,
+  onClose,
 }: {
   selection: TokenSelection;
   resolver: Resolver;
+  onClose: () => void;
 }) {
   const document = useDocumentStore((state) => state.document);
+  const themes = useDocumentStore((state) => state.themes);
   const execute = useDocumentStore((state) => state.execute);
   const select = useUiStore((state) => state.select);
   const [error, setError] = useState<string>();
   const [renaming, setRenaming] = useState(false);
 
+  const columns = useMemo<ThemeColumn[]>(() => {
+    const usable = themes
+      .map((theme) => ({
+        theme,
+        order: resolutionOrder(theme).filter((name) => document.sets.has(name)),
+      }))
+      .filter((entry) => entry.order.length > 0);
+    if (usable.length === 0) return [];
+    return usable.map(({ theme, order }) => ({
+      key: theme.name,
+      label: theme.name,
+      theme,
+      resolver: createResolver(document, { setOrder: order }),
+    }));
+  }, [themes, document]);
+
+  const baseTheme = columns[0]?.theme;
+
   const token = document.sets.get(selection.set)?.tokens.get(selection.path);
   if (!token) {
     return (
-      <aside className="studio-inspector">
+      <aside className="inspector-panel" data-testid="inspector">
+        <div className="inspector-panel-header">
+          <button
+            type="button"
+            className="inspector-close-btn"
+            aria-label="Close inspector"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
         <p className="empty-state">Token no longer exists.</p>
       </aside>
     );
@@ -65,9 +132,19 @@ export function Inspector({
   const meta = token.okeytokey;
 
   return (
-    <aside className="studio-inspector" data-testid="inspector">
+    <aside className="inspector-panel" data-testid="inspector">
       <header className="inspector-header">
-        <div className="token-path">{`${selection.set} · ${token.pathString}`}</div>
+        <div className="inspector-panel-header">
+          <div className="token-path">{`${selection.set} · ${token.pathString}`}</div>
+          <button
+            type="button"
+            className="inspector-close-btn"
+            aria-label="Close inspector"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
         <div className="editor-row">
           <h2>{token.name}</h2>
           <Button
@@ -132,6 +209,86 @@ export function Inspector({
           )}
         </div>
       </section>
+
+      {columns.length > 0 && (
+        <section className="inspector-section">
+          <p className="inspector-values-label">Values</p>
+          {columns.map((col) => {
+            const definer = col.theme
+              ? definingSet(document, col.theme, token.pathString)
+              : selection.set;
+            const definerToken = definer
+              ? document.sets.get(definer)?.tokens.get(token.pathString)
+              : undefined;
+            const rawValue = definerToken?.value;
+            const rawScalar =
+              typeof rawValue === "string" || typeof rawValue === "number"
+                ? String(rawValue)
+                : undefined;
+            const { resolved: colResolved } = safeResolve(col.resolver, token.pathString);
+            const colResolvedColor =
+              definerToken?.type === "color" &&
+              colResolved &&
+              typeof colResolved.value === "string" &&
+              isColor(colResolved.value)
+                ? colResolved.value
+                : undefined;
+
+            const commitThemeValue = (next: string) => {
+              const trimmed = next.trim();
+              if (!trimmed || trimmed === rawScalar) return;
+              try {
+                const isBase = col.theme === undefined || col.theme === baseTheme;
+                const baseDefiner = baseTheme
+                  ? definingSet(document, baseTheme, token.pathString)
+                  : undefined;
+                const inherited = !isBase && definer === baseDefiner;
+                if (isBase || !inherited) {
+                  execute(cmdSetTokenValue(definer ?? selection.set, token.pathString, trimmed));
+                } else {
+                  // col.theme is always defined here: !isBase means col.theme !== undefined
+                  const target = overrideSet(col.theme, baseTheme);
+                  if (target) {
+                    execute(
+                      cmdCreateTokenInSet(target, token.pathString, {
+                        type: definerToken?.type ?? "color",
+                        value: trimmed,
+                      }),
+                    );
+                  }
+                }
+              } catch (commitError) {
+                setError(commitError instanceof Error ? commitError.message : String(commitError));
+              }
+            };
+
+            return (
+              <div key={col.key} className="inspector-theme-row">
+                <span className="inspector-theme-label">{col.label}</span>
+                {colResolvedColor !== undefined && (
+                  <ColorSwatch
+                    color={colResolvedColor}
+                    gamutWarning={gamutWarning(parseColor(colResolvedColor)) !== undefined}
+                  />
+                )}
+                <input
+                  key={`${col.key}-${token.pathString}-${rawScalar ?? ""}`}
+                  className="token-cell-input inspector-theme-input"
+                  defaultValue={rawScalar ?? ""}
+                  aria-label={`${token.pathString} value in ${col.label}`}
+                  onBlur={(e) => {
+                    commitThemeValue(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitThemeValue(e.currentTarget.value);
+                    if (e.key === "Escape") e.currentTarget.blur();
+                  }}
+                />
+              </div>
+            );
+          })}
+        </section>
+      )}
 
       <section className="inspector-section">
         <Field label="Description">

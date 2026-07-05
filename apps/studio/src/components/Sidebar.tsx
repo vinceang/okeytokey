@@ -29,6 +29,7 @@ export function Sidebar() {
   const activeSet = useUiStore((state) => state.activeSet);
   const setActiveSet = useUiStore((state) => state.setActiveSet);
   const openDialog = useUiStore((state) => state.openDialog);
+  const selection = useUiStore((state) => state.selection);
 
   const [importError, setImportError] = useState<string>();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -232,6 +233,13 @@ export function Sidebar() {
           User guide ↗
         </a>
       </div>
+
+      {selection === undefined && (
+        <p className="sidebar-hint">
+          <strong>Note:</strong> Select a token to inspect and edit it. Press ⌘K for the command
+          palette.
+        </p>
+      )}
     </nav>
   );
 }

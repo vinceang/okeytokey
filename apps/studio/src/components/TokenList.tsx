@@ -37,6 +37,54 @@ import {
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 
+function SlidersIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 13 13"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <line
+        x1="1.5"
+        y1="4"
+        x2="11.5"
+        y2="4"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <circle
+        cx="5"
+        cy="4"
+        r="1.6"
+        fill="var(--surface-panel, #fff)"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <line
+        x1="1.5"
+        y1="9"
+        x2="11.5"
+        y2="9"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <circle
+        cx="8.5"
+        cy="9"
+        r="1.6"
+        fill="var(--surface-panel, #fff)"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </svg>
+  );
+}
+
 /**
  * The token treegrid: the group hierarchy stays in the Name column (expand/
  * collapse, drag, keyboard nav), and each theme renders as a value column —
@@ -374,9 +422,11 @@ export function TokenList({ set, resolver }: TokenListProps) {
   const filter = useUiStore((state) => state.filter);
   const collapsed = useUiStore((state) => state.collapsed);
   const selection = useUiStore((state) => state.selection);
+  const inspectorOpen = useUiStore((state) => state.inspectorOpen);
   const activeTheme = useUiStore((state) => state.activeTheme);
   const setActiveTheme = useUiStore((state) => state.setActiveTheme);
   const select = useUiStore((state) => state.select);
+  const openInspector = useUiStore((state) => state.openInspector);
   const toggleCollapsed = useUiStore((state) => state.toggleCollapsed);
   const openDialog = useUiStore((state) => state.openDialog);
   const openNewTokenAt = useUiStore((state) => state.openNewTokenAt);
@@ -658,7 +708,7 @@ export function TokenList({ set, resolver }: TokenListProps) {
     >
       {/* ARIA treegrid: hierarchy in the rowheader column, themes as columns.
           Structure is treegrid > (header row | rowgroup > rows > cells). */}
-      <div role="treegrid" aria-label="Tokens" aria-colcount={columns.length + 1}>
+      <div role="treegrid" aria-label="Tokens" aria-colcount={columns.length + 2}>
         <div
           className="token-grid-header"
           style={{ gridTemplateColumns: gridTemplate, minWidth: gridMinWidth }}
@@ -1059,6 +1109,28 @@ export function TokenList({ set, resolver }: TokenListProps) {
                     }}
                   />
                 ))}
+                <div
+                  role="gridcell"
+                  className={`inspector-trigger-cell${inspectorOpen && selection?.set === set.name && selection.path === token.pathString ? " inspector-trigger-cell--active" : ""}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="inspector-trigger-btn"
+                    title="Edit token properties"
+                    aria-label={`Edit properties for ${token.pathString}`}
+                    data-testid={`inspector-trigger-${token.pathString}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      select({ set: set.name, path: token.pathString });
+                      openInspector();
+                    }}
+                  >
+                    <SlidersIcon />
+                  </button>
+                </div>
               </div>
             );
           })}
