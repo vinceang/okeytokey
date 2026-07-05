@@ -7,6 +7,8 @@ export const DTCG_TOKEN_TYPES = [
   "duration",
   "cubicBezier",
   "number",
+  "string",
+  "boolean",
   "typography",
   "border",
   "shadow",

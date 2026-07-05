@@ -12,7 +12,7 @@ import {
   type TokenSet,
   type ValueSuggestion,
 } from "@okeytokey/core";
-import { DTCG_TOKEN_TYPES, makeReference, type DtcgTokenType, type Layer } from "@okeytokey/schema";
+import { makeReference, type DtcgTokenType, type Layer } from "@okeytokey/schema";
 import { Button, ColorSwatch, Field, SegmentedControl, Select, TextInput } from "@okeytokey/ui";
 
 import { GOOGLE_FONTS, FONT_WEIGHTS, SYSTEM_FONT_STACKS } from "../data/fonts.js";
@@ -110,7 +110,7 @@ export function NewSetDialog({ onClose }: { onClose: () => void }) {
             options={LAYER_OPTIONS}
             value={layer}
             onChange={(v) => {
-              setLayer(v as LayerChoice);
+              setLayer(v);
             }}
           />
         )}
@@ -137,6 +137,8 @@ const DEFAULT_VALUES: Partial<Record<DtcgTokenType, string>> = {
   color: "#808080",
   dimension: "16px",
   number: "1",
+  string: "",
+  boolean: "true",
   duration: "200ms",
   fontWeight: "400",
   fontFamily: "sans-serif",
@@ -145,6 +147,7 @@ const DEFAULT_VALUES: Partial<Record<DtcgTokenType, string>> = {
 /** Parse the free-text initial value appropriately for the chosen type. */
 function parseInitialValue(type: DtcgTokenType, text: string): unknown {
   const trimmed = text.trim();
+  if (type === "boolean") return trimmed === "true";
   if (type === "number" || type === "fontWeight") {
     const numeric = Number(trimmed);
     if (Number.isFinite(numeric) && trimmed !== "") return numeric;
@@ -393,14 +396,53 @@ export function NewTokenDialog({
               setValue(DEFAULT_VALUES[nextType] ?? "");
             }}
           >
-            {DTCG_TOKEN_TYPES.map((tokenType) => (
-              <option key={tokenType} value={tokenType}>
-                {tokenType}
-              </option>
-            ))}
+            <optgroup label="Color">
+              <option value="color">color</option>
+              <option value="gradient">gradient</option>
+            </optgroup>
+            <optgroup label="Number">
+              <option value="number">number</option>
+              <option value="dimension">dimension</option>
+            </optgroup>
+            <optgroup label="Text">
+              <option value="string">string</option>
+              <option value="fontFamily">fontFamily</option>
+              <option value="fontWeight">fontWeight</option>
+              <option value="typography">typography</option>
+            </optgroup>
+            <optgroup label="Logic">
+              <option value="boolean">boolean</option>
+            </optgroup>
+            <optgroup label="Motion">
+              <option value="duration">duration</option>
+              <option value="cubicBezier">cubicBezier</option>
+              <option value="transition">transition</option>
+            </optgroup>
+            <optgroup label="Advanced">
+              <option value="border">border</option>
+              <option value="shadow">shadow</option>
+              <option value="strokeStyle">strokeStyle</option>
+            </optgroup>
           </Select>
         )}
       </Field>
+      {type === "boolean" && (
+        <Field label="Value">
+          {(_id) => (
+            <SegmentedControl
+              aria-label="Boolean value"
+              options={[
+                { value: "true", label: "true" },
+                { value: "false", label: "false" },
+              ]}
+              value={value === "true" || value === "" ? "true" : "false"}
+              onChange={(v) => {
+                setValue(v);
+              }}
+            />
+          )}
+        </Field>
+      )}
       {type === "fontFamily" && (
         <Field label="Pick a family (or type below)">
           {(id) => (

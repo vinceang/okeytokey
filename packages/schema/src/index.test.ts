@@ -6,7 +6,7 @@ describe("DTCG_TOKEN_TYPES", () => {
   it("includes the primitive and composite DTCG types", () => {
     expect(DTCG_TOKEN_TYPES).toContain("color");
     expect(DTCG_TOKEN_TYPES).toContain("typography");
-    expect(DTCG_TOKEN_TYPES).toHaveLength(13);
+    expect(DTCG_TOKEN_TYPES).toHaveLength(15);
   });
 
   it("has no duplicates", () => {

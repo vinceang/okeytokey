@@ -98,6 +98,10 @@ export const cubicBezierValueSchema = z.tuple([
 
 export const numberValueSchema = z.number();
 
+export const stringValueSchema = z.string();
+
+export const booleanValueSchema = z.boolean();
+
 // ---------------------------------------------------------------------------
 // Composite types
 // ---------------------------------------------------------------------------
@@ -174,6 +178,8 @@ const bareValueSchemas = {
   duration: durationValueSchema,
   cubicBezier: cubicBezierValueSchema,
   number: numberValueSchema,
+  string: stringValueSchema,
+  boolean: booleanValueSchema,
   typography: typographyValueSchema,
   border: borderValueSchema,
   shadow: shadowValueSchema,
@@ -204,6 +210,8 @@ export type FontWeightValue = z.infer<typeof fontWeightValueSchema>;
 export type DurationValue = z.infer<typeof durationValueSchema>;
 export type CubicBezierValue = z.infer<typeof cubicBezierValueSchema>;
 export type NumberValue = z.infer<typeof numberValueSchema>;
+export type StringValue = z.infer<typeof stringValueSchema>;
+export type BooleanValue = z.infer<typeof booleanValueSchema>;
 export type TypographyValue = z.infer<typeof typographyValueSchema>;
 export type BorderValue = z.infer<typeof borderValueSchema>;
 export type ShadowValue = z.infer<typeof shadowValueSchema>;

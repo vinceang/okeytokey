@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { Resolver, TokenNode } from "@okeytokey/core";
 import { isReference, makeReference, referencePath } from "@okeytokey/schema";
-import { Button, ReferencePill, TextInput } from "@okeytokey/ui";
+import { Button, ReferencePill, SegmentedControl, TextInput } from "@okeytokey/ui";
 
 import { safeResolve } from "../../hooks/use-resolver.js";
 import { AliasPicker } from "./AliasPicker.js";
@@ -154,6 +154,11 @@ export function ValueEditor({ token, resolver, onCommit }: ValueEditorProps) {
     );
   }
 
+  const BOOL_OPTIONS = [
+    { value: "true", label: "true" },
+    { value: "false", label: "false" },
+  ] as const;
+
   let editor;
   switch (token.type) {
     case "color":
@@ -177,6 +182,21 @@ export function ValueEditor({ token, resolver, onCommit }: ValueEditorProps) {
             <DimensionUnitBar path={token.pathString} value={value} onCommit={onCommit} />
           )}
         </>
+      );
+      break;
+    case "string":
+      editor = <TextValueEditor value={value} numeric={false} onCommit={onCommit} />;
+      break;
+    case "boolean":
+      editor = (
+        <SegmentedControl
+          aria-label="Boolean value"
+          options={BOOL_OPTIONS}
+          value={value === true ? "true" : "false"}
+          onChange={(v) => {
+            onCommit(v === "true");
+          }}
+        />
       );
       break;
     case "duration":
