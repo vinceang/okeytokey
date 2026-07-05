@@ -9,6 +9,7 @@ import { AliasPicker } from "./AliasPicker.js";
 import { ColorEditor } from "./ColorEditor.js";
 import { ColorFormatBar } from "./ColorFormatBar.js";
 import { DimensionUnitBar } from "./DimensionUnitBar.js";
+import { GradientEditor } from "./GradientEditor.js";
 import { ShadowEditor } from "./ShadowEditor.js";
 import { TypographyEditor } from "./TypographyEditor.js";
 
@@ -205,6 +206,9 @@ export function ValueEditor({ token, resolver, onCommit }: ValueEditorProps) {
       editor = (
         <TextValueEditor value={value} numeric={token.type === "fontWeight"} onCommit={onCommit} />
       );
+      break;
+    case "gradient":
+      editor = <GradientEditor value={value} onCommit={onCommit} />;
       break;
     case "typography":
       editor = <TypographyEditor value={value} onCommit={onCommit} />;

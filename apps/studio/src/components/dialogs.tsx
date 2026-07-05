@@ -20,6 +20,7 @@ import { cmdAddSet, cmdCreateToken } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 import { AliasPicker } from "./editors/AliasPicker.js";
+import { GradientEditor } from "./editors/GradientEditor.js";
 
 export function Dialog({
   title,
@@ -133,8 +134,14 @@ export function NewSetDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+const DEFAULT_GRADIENT = [
+  { color: "#3b82f6", position: 0 },
+  { color: "#8b5cf6", position: 1 },
+];
+
 const DEFAULT_VALUES: Partial<Record<DtcgTokenType, string>> = {
   color: "#808080",
+  gradient: JSON.stringify(DEFAULT_GRADIENT),
   dimension: "16px",
   number: "1",
   string: "",
@@ -503,37 +510,56 @@ export function NewTokenDialog({
           )}
         </Field>
       )}
-      <Field label="Initial value" error={error}>
-        {(id) => (
-          <div className="value-with-picker">
-            <TextInput
-              id={id}
-              mono
-              value={value}
-              data-testid="new-token-value"
-              placeholder='#3b82f6, 16px, or {"fontSize": "16px"}'
-              onChange={(event) => {
-                setValue(event.target.value);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && canCreate) create();
+      {type === "gradient" ? (
+        <Field label="Gradient" error={error}>
+          {() => (
+            <GradientEditor
+              value={(() => {
+                try {
+                  return JSON.parse(value) as unknown;
+                } catch {
+                  return undefined;
+                }
+              })()}
+              onCommit={(v) => {
+                setValue(JSON.stringify(v));
               }}
             />
-            {type === "color" && (
-              <input
-                type="color"
-                className="new-token-color-picker"
-                aria-label="Pick a color"
-                data-testid="new-token-color-picker"
-                value={pickerHex ?? "#808080"}
+          )}
+        </Field>
+      ) : (
+        <Field label="Initial value" error={error}>
+          {(id) => (
+            <div className="value-with-picker">
+              <TextInput
+                id={id}
+                mono
+                value={value}
+                data-testid="new-token-value"
+                placeholder='#3b82f6, 16px, or {"fontSize": "16px"}'
                 onChange={(event) => {
                   setValue(event.target.value);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && canCreate) create();
+                }}
               />
-            )}
-          </div>
-        )}
-      </Field>
+              {type === "color" && (
+                <input
+                  type="color"
+                  className="new-token-color-picker"
+                  aria-label="Pick a color"
+                  data-testid="new-token-color-picker"
+                  value={pickerHex ?? "#808080"}
+                  onChange={(event) => {
+                    setValue(event.target.value);
+                  }}
+                />
+              )}
+            </div>
+          )}
+        </Field>
+      )}
 
       <SuggestionChips suggestions={suggestions} onPick={setValue} />
 

@@ -1004,6 +1004,59 @@ a.sidebar-item {
   background: var(--surface-sunken);
 }
 
+/* --- Gradient editor ------------------------------------------------------------- */
+.gradient-preview {
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  margin-bottom: var(--space-2);
+}
+
+.gradient-stop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  margin-bottom: var(--space-2);
+}
+
+.gradient-stop-color-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gradient-stop-swatch {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: none;
+}
+
+.gradient-stop-position-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gradient-stop-slider {
+  flex: 1;
+  accent-color: var(--accent-primary, #3b82f6);
+}
+
+.gradient-stop-pct {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
 /* --- Alias picker ---------------------------------------------------------------- */
 .alias-picker {
   position: relative;
