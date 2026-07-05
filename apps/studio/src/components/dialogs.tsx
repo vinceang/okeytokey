@@ -282,7 +282,7 @@ export function NewTokenDialog({
               id={id}
               mono
               autoFocus
-              placeholder="colors.brand.500"
+              placeholder={intent === "subgroup" ? "colors.blue.500" : "colors.brand.500"}
               value={path}
               data-testid="new-token-path"
               onChange={(event) => {
@@ -295,10 +295,12 @@ export function NewTokenDialog({
           )
         }
       </Field>
-      {intent === "subgroup" && parentPath !== undefined && (
+      {intent === "subgroup" && (
         <p className="field-hint" data-testid="new-token-subgroup-hint">
-          A subgroup appears once it holds a token — name both with a dot, e.g.{" "}
-          <code>hover.default</code>.
+          {parentPath !== undefined
+            ? "A subgroup appears once it holds a token — name both with a dot, e.g."
+            : "Groups appear once they hold a token — use dots to name both, e.g."}{" "}
+          <code>{parentPath !== undefined ? "hover.default" : "colors.blue.500"}</code>.
         </p>
       )}
       <Field label="Type">
