@@ -316,6 +316,33 @@ export const noRawValueInUpperLayers: LintRule = {
   },
 };
 
+export const noSetLayer: LintRule = {
+  id: "no-set-layer",
+  // Off by default: enables teams that deliberately adopt layers to get nudges
+  // without flooding new users who haven't set any layers yet.
+  defaultSeverity: "off",
+  check(context, _options, severity) {
+    const diagnostics: Diagnostic[] = [];
+    for (const [setName, set] of context.document.sets) {
+      if (set.tokens.size < 5) continue;
+      const hasAnyLayer = [...set.tokens.values()].some((t) => t.layer !== undefined);
+      if (hasAnyLayer) continue;
+      const firstPath = [...set.tokens.keys()][0] ?? "";
+      diagnostics.push({
+        ruleId: this.id,
+        severity,
+        tokenPath: firstPath,
+        setName,
+        message:
+          `"${setName}" has ${String(set.tokens.size)} tokens but no layer assigned — ` +
+          `add layer: "primitive" | "semantic" | "component" in $extensions["com.okeytokey"] ` +
+          `to enable primitive → semantic → component structure linting`,
+      });
+    }
+    return diagnostics;
+  },
+};
+
 export const BUILTIN_RULES = [
   noBrokenReferences,
   noReferenceCycles,
@@ -326,4 +353,5 @@ export const BUILTIN_RULES = [
   ownershipRequired,
   layerSkip,
   noRawValueInUpperLayers,
+  noSetLayer,
 ] as unknown as readonly LintRule<never>[];

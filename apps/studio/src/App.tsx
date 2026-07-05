@@ -14,7 +14,7 @@ import { ScaleDialog } from "./components/ScaleDialog.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { SyncDialog } from "./components/SyncDialog.js";
 import { TokenList } from "./components/TokenList.js";
-import { NewTokenDialog } from "./components/dialogs.js";
+import { NewSetDialog, NewTokenDialog } from "./components/dialogs.js";
 import { useResolver } from "./hooks/use-resolver.js";
 import { useDocumentStore } from "./state/document-store.js";
 import { createStorage, initPersistence } from "./state/persistence.js";
@@ -147,6 +147,13 @@ export function App() {
           )}
         </div>
       </main>
+      {dialog === "new-set" && (
+        <NewSetDialog
+          onClose={() => {
+            openDialog(undefined);
+          }}
+        />
+      )}
       {dialog === "new-token" && currentSet && (
         <NewTokenDialog
           setName={currentSet.name}

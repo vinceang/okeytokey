@@ -3,9 +3,10 @@ import { expect, test } from "@playwright/test";
 test("create set → add token → alias → edit → undo/redo", async ({ page }) => {
   await page.goto("/");
 
-  // Create a new set (name comes from a window.prompt).
-  page.once("dialog", (dialog) => void dialog.accept("brand"));
+  // Create a new set via the New Set dialog.
   await page.getByTestId("add-set").click();
+  await page.getByTestId("new-set-name").fill("brand");
+  await page.getByTestId("create-set").click();
   await expect(page.getByTestId("set-brand")).toBeVisible();
 
   // Add a color token.

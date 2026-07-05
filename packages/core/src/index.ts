@@ -150,7 +150,7 @@ export {
 } from "./refactor/refactor.js";
 
 export { lintDocument, type LintOptions } from "./validate/engine.js";
-export { BUILTIN_RULES } from "./validate/rules.js";
+export { BUILTIN_RULES, noSetLayer } from "./validate/rules.js";
 export type {
   ContrastOptions,
   ContrastPair,

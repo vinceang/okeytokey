@@ -18,7 +18,7 @@ import {
   type TokenMetaPatch,
   type TokenSet,
 } from "@okeytokey/core";
-import type { DtcgTokenType } from "@okeytokey/schema";
+import type { DtcgTokenType, Layer } from "@okeytokey/schema";
 
 /**
  * Command pattern over the immutable document. `run` returns the next
@@ -126,11 +126,11 @@ export function cmdSortGroup(setName: string, path: string): Command {
   return setCommand(`Sort ${path} A→Z`, setName, (set) => sortGroup(set, path));
 }
 
-export function cmdAddSet(name: string): Command {
+export function cmdAddSet(name: string, layer?: Layer): Command {
   return {
     label: `Create set ${name}`,
     run(document) {
-      return { document: addSet(document, emptySet(name)), inverse: cmdRemoveSet(name) };
+      return { document: addSet(document, emptySet(name, layer)), inverse: cmdRemoveSet(name) };
     },
   };
 }

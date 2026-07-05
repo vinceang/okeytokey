@@ -1,18 +1,26 @@
 import { useRef, useState } from "react";
 
-import { parseTokenSet, serializeTokenSet } from "@okeytokey/core";
+import { parseTokenSet, serializeTokenSet, type TokenSet } from "@okeytokey/core";
+import type { Layer } from "@okeytokey/schema";
 import { Button } from "@okeytokey/ui";
 
-import {
-  cmdAddSet,
-  cmdImportSet,
-  cmdRemoveSet,
-  cmdRenameSet,
-  cmdSortSet,
-} from "../state/commands.js";
+import { cmdImportSet, cmdRemoveSet, cmdRenameSet, cmdSortSet } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 import { RowMenu } from "./RowMenu.js";
+
+const LAYER_ABBR: Record<Layer, string> = {
+  primitive: "prim",
+  semantic: "sem",
+  component: "comp",
+};
+
+function getSetLayer(set: TokenSet): Layer | undefined {
+  if (set.tokens.size === 0) return undefined;
+  const layers = new Set([...set.tokens.values()].map((t) => t.layer));
+  if (layers.size === 1) return [...layers][0];
+  return undefined;
+}
 
 function download(filename: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
@@ -29,20 +37,14 @@ export function Sidebar() {
   const activeSet = useUiStore((state) => state.activeSet);
   const setActiveSet = useUiStore((state) => state.setActiveSet);
   const openDialog = useUiStore((state) => state.openDialog);
+  const openNewSetDialog = useUiStore((state) => state.openNewSetDialog);
   const selection = useUiStore((state) => state.selection);
 
   const [importError, setImportError] = useState<string>();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const addSet = () => {
-    const name = window.prompt("Set name");
-    if (!name) return;
-    try {
-      execute(cmdAddSet(name.trim()));
-      setActiveSet(name.trim());
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : String(error));
-    }
+    openNewSetDialog();
   };
 
   const importFile = (file: File) => {
@@ -69,90 +71,98 @@ export function Sidebar() {
             +
           </Button>
         </header>
-        {[...tokenDocument.sets.values()].map((set) => (
-          <div className="sidebar-row" key={set.name}>
-            <button
-              type="button"
-              className="sidebar-item"
-              aria-current={activeSet === set.name}
-              data-testid={`set-${set.name}`}
-              onClick={() => {
-                setActiveSet(set.name);
-              }}
-            >
-              {set.name}
-              <span className="count">{set.tokens.size}</span>
-            </button>
-            <RowMenu label={`Actions for set ${set.name}`} testId={`set-menu-${set.name}`}>
-              {(close) => (
-                <>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="row-menu-item"
-                    data-testid={`set-rename-${set.name}`}
-                    onClick={() => {
-                      close();
-                      const next = window.prompt(`Rename set "${set.name}"`, set.name)?.trim();
-                      if (!next || next === set.name) return;
-                      try {
-                        execute(cmdRenameSet(set.name, next));
-                        if (activeSet === set.name) setActiveSet(next);
-                      } catch (error) {
-                        window.alert(error instanceof Error ? error.message : String(error));
-                      }
-                    }}
-                  >
-                    Rename…
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="row-menu-item"
-                    data-testid={`set-sort-${set.name}`}
-                    onClick={() => {
-                      close();
-                      execute(cmdSortSet(set.name));
-                    }}
-                  >
-                    Sort A→Z
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="row-menu-item"
-                    data-testid={`set-export-${set.name}`}
-                    onClick={() => {
-                      close();
-                      download(`${set.name}.json`, serializeTokenSet(set));
-                    }}
-                  >
-                    Export JSON
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="row-menu-item row-menu-item--danger"
-                    data-testid={`set-delete-${set.name}`}
-                    onClick={() => {
-                      close();
-                      if (
-                        window.confirm(
-                          `Delete set "${set.name}" and its ${String(set.tokens.size)} token(s)? You can undo this.`,
-                        )
-                      ) {
-                        execute(cmdRemoveSet(set.name));
-                        if (activeSet === set.name) setActiveSet(undefined);
-                      }
-                    }}
-                  >
-                    Delete set…
-                  </button>
-                </>
-              )}
-            </RowMenu>
-          </div>
-        ))}
+        {[...tokenDocument.sets.values()].map((set) => {
+          const setLayer = getSetLayer(set);
+          return (
+            <div className="sidebar-row" key={set.name}>
+              <button
+                type="button"
+                className="sidebar-item"
+                aria-current={activeSet === set.name}
+                data-testid={`set-${set.name}`}
+                onClick={() => {
+                  setActiveSet(set.name);
+                }}
+              >
+                {set.name}
+                {setLayer !== undefined && (
+                  <span className={`layer-badge layer-badge--${setLayer}`} title={setLayer}>
+                    {LAYER_ABBR[setLayer]}
+                  </span>
+                )}
+                <span className="count">{set.tokens.size}</span>
+              </button>
+              <RowMenu label={`Actions for set ${set.name}`} testId={`set-menu-${set.name}`}>
+                {(close) => (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="row-menu-item"
+                      data-testid={`set-rename-${set.name}`}
+                      onClick={() => {
+                        close();
+                        const next = window.prompt(`Rename set "${set.name}"`, set.name)?.trim();
+                        if (!next || next === set.name) return;
+                        try {
+                          execute(cmdRenameSet(set.name, next));
+                          if (activeSet === set.name) setActiveSet(next);
+                        } catch (error) {
+                          window.alert(error instanceof Error ? error.message : String(error));
+                        }
+                      }}
+                    >
+                      Rename…
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="row-menu-item"
+                      data-testid={`set-sort-${set.name}`}
+                      onClick={() => {
+                        close();
+                        execute(cmdSortSet(set.name));
+                      }}
+                    >
+                      Sort A→Z
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="row-menu-item"
+                      data-testid={`set-export-${set.name}`}
+                      onClick={() => {
+                        close();
+                        download(`${set.name}.json`, serializeTokenSet(set));
+                      }}
+                    >
+                      Export JSON
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="row-menu-item row-menu-item--danger"
+                      data-testid={`set-delete-${set.name}`}
+                      onClick={() => {
+                        close();
+                        if (
+                          window.confirm(
+                            `Delete set "${set.name}" and its ${String(set.tokens.size)} token(s)? You can undo this.`,
+                          )
+                        ) {
+                          execute(cmdRemoveSet(set.name));
+                          if (activeSet === set.name) setActiveSet(undefined);
+                        }
+                      }}
+                    >
+                      Delete set…
+                    </button>
+                  </>
+                )}
+              </RowMenu>
+            </div>
+          );
+        })}
       </div>
 
       <div className="sidebar-section">

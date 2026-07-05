@@ -8,7 +8,7 @@ export interface TokenSelection {
 }
 
 export type StudioDialog =
-  "export" | "sync" | "new-token" | "scale" | "dimension-scale" | "ai" | "ai-generate";
+  "export" | "sync" | "new-token" | "new-set" | "scale" | "dimension-scale" | "ai" | "ai-generate";
 
 /**
  * When the New Token dialog is opened from a group's ⋮ menu, the parent path
@@ -46,6 +46,8 @@ export interface UiState {
   openNewTokenAt: (parentPath: string, intent: "token" | "subgroup") => void;
   /** Open the New Token dialog in "new group" mode (no parent prefix). */
   openNewGroupDialog: () => void;
+  /** Open the New Set dialog (name + layer picker). */
+  openNewSetDialog: () => void;
   openInspector: () => void;
   closeInspector: () => void;
 }
@@ -88,6 +90,9 @@ export const useUiStore = create<UiState>()((set, get) => ({
   },
   openNewGroupDialog() {
     set({ dialog: "new-token", newTokenContext: { intent: "subgroup" } });
+  },
+  openNewSetDialog() {
+    set({ dialog: "new-set", newTokenContext: undefined });
   },
   openInspector() {
     set({ inspectorOpen: true });

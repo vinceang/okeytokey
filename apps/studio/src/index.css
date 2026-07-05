@@ -88,6 +88,28 @@ a.sidebar-item {
   color: var(--text-tertiary);
 }
 
+.layer-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.layer-badge--primitive {
+  background: color-mix(in srgb, #6366f1 15%, transparent);
+  color: #6366f1;
+}
+.layer-badge--semantic {
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  color: #b45309;
+}
+.layer-badge--component {
+  background: color-mix(in srgb, #10b981 15%, transparent);
+  color: #059669;
+}
+
 /* A set/theme row: the item flexes, the kebab trigger stays on the same line
    and never wraps below (a plain flex row, not the wrapping .editor-row). */
 .sidebar-row {

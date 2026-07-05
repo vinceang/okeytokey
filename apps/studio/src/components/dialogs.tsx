@@ -12,11 +12,11 @@ import {
   type TokenSet,
   type ValueSuggestion,
 } from "@okeytokey/core";
-import { DTCG_TOKEN_TYPES, makeReference, type DtcgTokenType } from "@okeytokey/schema";
+import { DTCG_TOKEN_TYPES, makeReference, type DtcgTokenType, type Layer } from "@okeytokey/schema";
 import { Button, ColorSwatch, Field, SegmentedControl, Select, TextInput } from "@okeytokey/ui";
 
 import { GOOGLE_FONTS, FONT_WEIGHTS, SYSTEM_FONT_STACKS } from "../data/fonts.js";
-import { cmdCreateToken } from "../state/commands.js";
+import { cmdAddSet, cmdCreateToken } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 import { AliasPicker } from "./editors/AliasPicker.js";
@@ -53,6 +53,83 @@ export function Dialog({
         {children}
       </div>
     </div>
+  );
+}
+
+type LayerChoice = Layer | "skip";
+
+const LAYER_OPTIONS: readonly { value: LayerChoice; label: string }[] = [
+  { value: "primitive", label: "Primitive" },
+  { value: "semantic", label: "Semantic" },
+  { value: "component", label: "Component" },
+  { value: "skip", label: "Skip" },
+];
+
+export function NewSetDialog({ onClose }: { onClose: () => void }) {
+  const execute = useDocumentStore((state) => state.execute);
+  const setActiveSet = useUiStore((state) => state.setActiveSet);
+  const [name, setName] = useState("");
+  const [layer, setLayer] = useState<LayerChoice>("skip");
+  const [error, setError] = useState<string>();
+
+  const create = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      execute(cmdAddSet(trimmed, layer === "skip" ? undefined : layer));
+      setActiveSet(trimmed);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  return (
+    <Dialog title="New token set" onClose={onClose}>
+      <Field label="Name" error={error}>
+        {(id) => (
+          <TextInput
+            id={id}
+            autoFocus
+            placeholder="primitives"
+            value={name}
+            data-testid="new-set-name"
+            onChange={(event) => {
+              setName(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && name.trim()) create();
+            }}
+          />
+        )}
+      </Field>
+      <Field label="Layer">
+        {(_id) => (
+          <SegmentedControl
+            aria-label="Token set layer"
+            options={LAYER_OPTIONS}
+            value={layer}
+            onChange={(v) => {
+              setLayer(v as LayerChoice);
+            }}
+          />
+        )}
+      </Field>
+      <p className="field-hint">
+        {layer === "primitive" && "Raw values — colors, spacing scales, type ramps."}
+        {layer === "semantic" && "Intent aliases — bg.primary, text.default, border.subtle."}
+        {layer === "component" && "Component aliases — button.bg, input.border.radius."}
+        {layer === "skip" && "You can assign a layer later via the token's inspector."}
+      </p>
+      <footer>
+        <Button variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="primary" disabled={!name.trim()} onClick={create} data-testid="create-set">
+          Create
+        </Button>
+      </footer>
+    </Dialog>
   );
 }
 

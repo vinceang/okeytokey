@@ -1,4 +1,10 @@
-import { isValidTokenName, splitTokenPath, type DtcgTokenType } from "@okeytokey/schema";
+import {
+  OKEYTOKEY_EXTENSION_NAMESPACE,
+  isValidTokenName,
+  splitTokenPath,
+  type DtcgTokenType,
+  type Layer,
+} from "@okeytokey/schema";
 
 import { TokenParseError } from "../errors.js";
 import { parseTokenSet, type TokenDocument, type TokenSet } from "../parser/document.js";
@@ -275,7 +281,12 @@ export function renameSet(document: TokenDocument, from: string, to: string): To
   return { sets };
 }
 
-/** An empty set, for "create set" flows. */
-export function emptySet(name: string): TokenSet {
-  return parseTokenSet(name, new Map());
+/** An empty set, for "create set" flows. Optional layer writes root-level $extensions so all future tokens inherit it. */
+export function emptySet(name: string, layer?: Layer): TokenSet {
+  if (!layer) return parseTokenSet(name, new Map());
+  const ext = new Map<string, JsonValue>([
+    [OKEYTOKEY_EXTENSION_NAMESPACE, new Map<string, JsonValue>([["layer", layer]])],
+  ]);
+  const root = new Map<string, JsonValue>([["$extensions", ext]]);
+  return parseTokenSet(name, root);
 }
