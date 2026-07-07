@@ -56,7 +56,7 @@ describe("createToken", () => {
   it("rejects values invalid for the type (revalidation)", () => {
     // Revalidation happens in parseTokenSet, so this surfaces as the parent
     // TokenParseError rather than TokenMutationError.
-    expect(() => createToken(base(), "x", { type: "dimension", value: "16em" })).toThrow(
+    expect(() => createToken(base(), "x", { type: "dimension", value: "16" })).toThrow(
       TokenParseError,
     );
   });

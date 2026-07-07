@@ -15,6 +15,7 @@ const TYPE_ICONS: Record<DtcgTokenType, { glyph: string; hue: number }> = {
   boolean: { glyph: "⊙", hue: 0 },
   fontFamily: { glyph: "Aa", hue: 152 },
   fontWeight: { glyph: "B", hue: 152 },
+  fontStyle: { glyph: "I", hue: 152 },
   typography: { glyph: "T", hue: 152 },
   duration: { glyph: "ms", hue: 38 },
   cubicBezier: { glyph: "∿", hue: 38 },

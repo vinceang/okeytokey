@@ -81,7 +81,7 @@ describe("safeParseTokenFile", () => {
 
   it("flags values that do not match the effective type", () => {
     const result = safeParseTokenFile({
-      spacing: { $type: "dimension", bad: { $value: "16em" } },
+      spacing: { $type: "dimension", bad: { $value: "16" } },
     });
     expect(result.success).toBe(false);
     if (result.success) throw new Error("expected failure");
@@ -135,7 +135,7 @@ describe("safeParseTokenFile", () => {
   it("collects multiple issues in one pass", () => {
     const result = safeParseTokenFile({
       a: { $value: "#fff" },
-      b: { $type: "dimension", $value: "16em" },
+      b: { $type: "dimension", $value: "16" },
     });
     expect(result.success).toBe(false);
     if (result.success) throw new Error("expected failure");

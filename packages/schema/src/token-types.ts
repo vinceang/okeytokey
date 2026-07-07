@@ -4,6 +4,7 @@ export const DTCG_TOKEN_TYPES = [
   "dimension",
   "fontFamily",
   "fontWeight",
+  "fontStyle",
   "duration",
   "cubicBezier",
   "number",

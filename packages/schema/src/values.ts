@@ -47,10 +47,10 @@ function orRefOrExpression<T extends z.ZodType>(schema: T) {
  */
 export const colorValueSchema = z.string().min(1);
 
-/** Dimensions: number+unit string ("16px", "1.5rem") or { value, unit }. */
-export const dimensionUnitSchema = z.enum(["px", "rem"]);
+/** Dimensions: number+unit string ("16px", "1.5rem", "0.5em", "100%") or { value, unit }. */
+export const dimensionUnitSchema = z.string().regex(/^(%|[a-z]+)$/, "must be a valid CSS unit");
 export const dimensionValueSchema = z.union([
-  z.string().regex(/^-?\d+(\.\d+)?(px|rem)$/, 'must be a number with a px/rem unit, e.g. "16px"'),
+  z.string().regex(/^-?\d+(\.\d+)?(%|[a-z]+)$/, 'must be a number with a CSS unit, e.g. "16px"'),
   z.object({ value: z.number(), unit: dimensionUnitSchema }).strict(),
 ]);
 
@@ -61,6 +61,11 @@ export const fontFamilyValueSchema = z.union([
 
 export const fontWeightValueSchema = z.union([
   z.number().min(1).max(1000),
+  z
+    .string()
+    .regex(/^\d{1,4}$/, "numeric font-weight string must be 1–4 digits")
+    .transform(Number)
+    .pipe(z.number().min(1).max(1000)),
   z.enum([
     "thin",
     "hairline",
@@ -102,17 +107,29 @@ export const stringValueSchema = z.string();
 
 export const booleanValueSchema = z.boolean();
 
+/** fontStyle: CSS font-style value ("normal", "italic", "oblique", "oblique 20deg"). */
+export const fontStyleValueSchema = z.string().min(1);
+
 // ---------------------------------------------------------------------------
 // Composite types
 // ---------------------------------------------------------------------------
+
+const lineHeightValueSchema = z.union([
+  z.number(),
+  z
+    .string()
+    .regex(/^\d+(\.\d+)?$/, "numeric line-height string must be a non-negative number")
+    .transform(Number),
+]);
 
 export const typographyValueSchema = z
   .object({
     fontFamily: orRef(fontFamilyValueSchema),
     fontSize: orRefOrExpression(dimensionValueSchema),
     fontWeight: orRef(fontWeightValueSchema),
+    fontStyle: orRef(fontStyleValueSchema).optional(),
     letterSpacing: orRefOrExpression(dimensionValueSchema),
-    lineHeight: orRefOrExpression(numberValueSchema),
+    lineHeight: orRefOrExpression(lineHeightValueSchema),
   })
   .partial()
   .strict();
@@ -175,6 +192,7 @@ const bareValueSchemas = {
   dimension: dimensionValueSchema,
   fontFamily: fontFamilyValueSchema,
   fontWeight: fontWeightValueSchema,
+  fontStyle: fontStyleValueSchema,
   duration: durationValueSchema,
   cubicBezier: cubicBezierValueSchema,
   number: numberValueSchema,
@@ -207,6 +225,7 @@ export type ColorValue = z.infer<typeof colorValueSchema>;
 export type DimensionValue = z.infer<typeof dimensionValueSchema>;
 export type FontFamilyValue = z.infer<typeof fontFamilyValueSchema>;
 export type FontWeightValue = z.infer<typeof fontWeightValueSchema>;
+export type FontStyleValue = z.infer<typeof fontStyleValueSchema>;
 export type DurationValue = z.infer<typeof durationValueSchema>;
 export type CubicBezierValue = z.infer<typeof cubicBezierValueSchema>;
 export type NumberValue = z.infer<typeof numberValueSchema>;

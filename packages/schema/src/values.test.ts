@@ -6,6 +6,7 @@ import {
   dimensionValueSchema,
   durationValueSchema,
   fontFamilyValueSchema,
+  fontStyleValueSchema,
   fontWeightValueSchema,
   gradientValueSchema,
   shadowValueSchema,
@@ -22,10 +23,17 @@ describe("dimension", () => {
     expect(dimensionValueSchema.safeParse({ value: 16, unit: "px" }).success).toBe(true);
   });
 
-  it("rejects unitless and unknown units", () => {
+  it("accepts em, %, ch, and other CSS units", () => {
+    expect(dimensionValueSchema.safeParse("1.5em").success).toBe(true);
+    expect(dimensionValueSchema.safeParse("100%").success).toBe(true);
+    expect(dimensionValueSchema.safeParse("-0.02em").success).toBe(true);
+    expect(dimensionValueSchema.safeParse("4ch").success).toBe(true);
+    expect(dimensionValueSchema.safeParse({ value: 16, unit: "em" }).success).toBe(true);
+  });
+
+  it("rejects unitless numbers", () => {
     expect(dimensionValueSchema.safeParse("16").success).toBe(false);
-    expect(dimensionValueSchema.safeParse("16em").success).toBe(false);
-    expect(dimensionValueSchema.safeParse({ value: 16, unit: "em" }).success).toBe(false);
+    expect(dimensionValueSchema.safeParse(16).success).toBe(false);
   });
 });
 
@@ -55,6 +63,22 @@ describe("fontFamily / fontWeight", () => {
     expect(fontWeightValueSchema.safeParse(1001).success).toBe(false);
     expect(fontWeightValueSchema.safeParse("chunky").success).toBe(false);
   });
+
+  it("coerces numeric weight strings to numbers", () => {
+    const result = fontWeightValueSchema.safeParse("700");
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toBe(700);
+    expect(fontWeightValueSchema.safeParse("400").success).toBe(true);
+    expect(fontWeightValueSchema.safeParse("0").success).toBe(false);
+    expect(fontWeightValueSchema.safeParse("1001").success).toBe(false);
+  });
+
+  it("accepts fontStyle values", () => {
+    expect(fontStyleValueSchema.safeParse("normal").success).toBe(true);
+    expect(fontStyleValueSchema.safeParse("italic").success).toBe(true);
+    expect(fontStyleValueSchema.safeParse("oblique 20deg").success).toBe(true);
+    expect(fontStyleValueSchema.safeParse("").success).toBe(false);
+  });
 });
 
 describe("cubicBezier", () => {
@@ -77,8 +101,33 @@ describe("typography", () => {
     expect(result.success).toBe(true);
   });
 
+  it("coerces lineHeight string numbers", () => {
+    const result = typographyValueSchema.safeParse({ lineHeight: "1.25" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.lineHeight).toBe(1.25);
+  });
+
+  it("accepts fontStyle sub-property", () => {
+    expect(typographyValueSchema.safeParse({ fontStyle: "italic" }).success).toBe(true);
+  });
+
   it("rejects unknown keys", () => {
     expect(typographyValueSchema.safeParse({ fontSize: "16px", kerning: 1 }).success).toBe(false);
+  });
+
+  it("parses a Tokens Studio / Style Dictionary export (issue repro)", () => {
+    const result = typographyValueSchema.safeParse({
+      fontFamily: "Inter, sans-serif",
+      fontSize: "32px",
+      fontWeight: "700",
+      lineHeight: "1.25",
+      letterSpacing: "-0.02em",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.fontWeight).toBe(700);
+      expect(result.data.lineHeight).toBe(1.25);
+    }
   });
 });
 
