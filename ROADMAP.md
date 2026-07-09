@@ -59,6 +59,16 @@ PRD), but these PRD commitments are missing, in priority order:
   combinations). The sidebar now owns sets only.
   Possible follow-up: an "all tokens" union view across sets (rows currently come
   from the active set).
+- ~~Multi-project studio~~ — shipped: each design system is a named project with its
+  own IndexedDB database and scoped localStorage keys (sync settings, sync base
+  snapshot, onboarding state). Hash routing (`#/` = dashboard, `#/project/{id}` =
+  editor). Dashboard with create / rename / delete. Legacy single-project database
+  auto-migrated to a "default" project on first run — no data loss. AI provider
+  settings remain global. No new runtime dependencies.
+- ~~CLI `lint` + `diff <ref>`~~ — shipped: `okeytokey lint` runs the full lint engine
+  and exits 1 on errors; `okeytokey diff <ref>` reads historical set files via
+  `git show`, runs the semantic differ, and prints a +/-/~ summary with downstream
+  impact count.
 - **Publish `@okeytokey/*` to npm** — changesets are configured; needs a decision on
   the npm scope/org (the unscoped `okeytokey` and `create-okeytokey` names are
   already reserved) and a release workflow.
