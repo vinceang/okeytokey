@@ -4,7 +4,7 @@ import { createTokenDocument, parseTokenSet } from "@okeytokey/core";
 
 import { GitHubProvider } from "./github.js";
 import { mergeDocuments, resolveConflict } from "./merge.js";
-import { SyncAuthError, documentToFiles } from "./types.js";
+import { SyncAuthError, documentToFiles, matchesProtectedPath } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // GitHub provider against a scripted fetch
@@ -154,6 +154,38 @@ describe("GitHubProvider", () => {
     ]);
   });
 
+  it("writes to a branch override instead of the configured branch", async () => {
+    const provider = new GitHubProvider({
+      ...OPTIONS,
+      fetch: scriptedFetch({
+        "GET /repos/acme/tokens/git/ref/heads/feature": () => ({
+          status: 200,
+          json: { object: { sha: "parent" } },
+        }),
+        "GET /repos/acme/tokens/git/commits/parent": () => ({
+          status: 200,
+          json: { tree: { sha: "basetree" } },
+        }),
+        "POST /repos/acme/tokens/git/trees": () => ({ status: 201, json: { sha: "newtree" } }),
+        "POST /repos/acme/tokens/git/commits": () => ({
+          status: 201,
+          json: { sha: "newcommit" },
+        }),
+        "PATCH /repos/acme/tokens/git/refs/heads/feature": () => ({
+          status: 200,
+          json: { object: { sha: "newcommit" } },
+        }),
+      }),
+    });
+    const result = await provider.writeTokens(
+      [{ path: "tokens/global.json", content: "{}" }],
+      "chore: sync tokens",
+      "feature",
+    );
+    expect(result.branch).toBe("feature");
+    expect(result.commitSha).toBe("newcommit");
+  });
+
   it("doctor pinpoints the failing step with a hint", async () => {
     const provider = new GitHubProvider({
       ...OPTIONS,
@@ -292,6 +324,39 @@ describe("mergeDocuments", () => {
     // They deleted "global" (unchanged on our side) -> gone; our new set stays.
     expect([...result.document.sets.keys()]).toEqual(["brand"]);
     expect(result.conflicts).toHaveLength(0);
+  });
+});
+
+describe("matchesProtectedPath", () => {
+  it("matches an exact path", () => {
+    expect(matchesProtectedPath("colors.primary.500", ["colors.primary.500"])).toBe(true);
+    expect(matchesProtectedPath("colors.primary.600", ["colors.primary.500"])).toBe(false);
+  });
+
+  it("* matches exactly one segment", () => {
+    expect(matchesProtectedPath("colors.blue", ["colors.*"])).toBe(true);
+    expect(matchesProtectedPath("colors.primary.500", ["colors.*"])).toBe(false);
+    expect(matchesProtectedPath("colors", ["colors.*"])).toBe(false);
+  });
+
+  it("** matches one or more segments", () => {
+    expect(matchesProtectedPath("colors.blue", ["colors.**"])).toBe(true);
+    expect(matchesProtectedPath("colors.primary.500", ["colors.**"])).toBe(true);
+    expect(matchesProtectedPath("spacing.base", ["colors.**"])).toBe(false);
+  });
+
+  it("** at the root matches any path", () => {
+    expect(matchesProtectedPath("colors.blue", ["**"])).toBe(true);
+    expect(matchesProtectedPath("colors.primary.500", ["**"])).toBe(true);
+  });
+
+  it("returns true when any pattern matches", () => {
+    expect(matchesProtectedPath("spacing.base", ["colors.**", "spacing.*"])).toBe(true);
+    expect(matchesProtectedPath("typography.heading", ["colors.**", "spacing.*"])).toBe(false);
+  });
+
+  it("returns false for an empty pattern list", () => {
+    expect(matchesProtectedPath("colors.blue", [])).toBe(false);
   });
 });
 

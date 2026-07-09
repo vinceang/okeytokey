@@ -172,8 +172,13 @@ export class GitHubProvider implements SyncProvider {
     return { files, ref };
   }
 
-  async writeTokens(files: readonly SyncFile[], message: string): Promise<WriteResult> {
-    const { owner, repo, branch } = this.options;
+  async writeTokens(
+    files: readonly SyncFile[],
+    message: string,
+    branch?: string,
+  ): Promise<WriteResult> {
+    const { owner, repo } = this.options;
+    branch = branch ?? this.options.branch;
     // Git Data API: one atomic commit for any number of files.
     const refResponse = await this.request(
       "writeTokens.ref",

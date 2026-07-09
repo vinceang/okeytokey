@@ -11,6 +11,7 @@ export {
   SyncAuthError,
   SyncError,
   documentToFiles,
+  matchesProtectedPath,
   type DoctorReport,
   type DoctorStep,
   type PullRequestResult,

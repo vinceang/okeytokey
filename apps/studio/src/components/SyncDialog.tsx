@@ -11,6 +11,7 @@ import {
 import {
   GitHubProvider,
   documentToFiles,
+  matchesProtectedPath,
   mergeDocuments,
   resolveConflict,
   type DoctorReport,
@@ -33,6 +34,8 @@ interface SyncSettings {
   branch: string;
   path: string;
   token: string;
+  /** Comma-separated CODEOWNERS-style glob patterns. Changes touching these paths open a PR instead of pushing directly. */
+  protectedPaths: string;
 }
 
 const SETTINGS_KEY = "okeytokey.sync.github";
@@ -45,7 +48,7 @@ function loadSettings(): SyncSettings {
   } catch {
     /* fall through */
   }
-  return { owner: "", repo: "", branch: "main", path: "tokens", token: "" };
+  return { owner: "", repo: "", branch: "main", path: "tokens", token: "", protectedPaths: "" };
 }
 
 /** Last-synced snapshot: the base side of the three-way merge. */
@@ -77,13 +80,19 @@ function documentFromFiles(files: readonly { path: string; content: string }[]):
   );
 }
 
-const FIELDS: { key: keyof SyncSettings; label: string; secret?: boolean }[] = [
-  { key: "owner", label: "Owner" },
-  { key: "repo", label: "Repository" },
-  { key: "branch", label: "Branch" },
-  { key: "path", label: "Path" },
-  { key: "token", label: "Access token", secret: true },
-];
+const FIELDS: { key: keyof SyncSettings; label: string; secret?: boolean; placeholder?: string }[] =
+  [
+    { key: "owner", label: "Owner" },
+    { key: "repo", label: "Repository" },
+    { key: "branch", label: "Branch" },
+    { key: "path", label: "Path" },
+    { key: "token", label: "Access token", secret: true },
+    {
+      key: "protectedPaths",
+      label: "Protected paths (require PR)",
+      placeholder: "colors.**, typography.**",
+    },
+  ];
 
 export function SyncDialog({ onClose }: { onClose: () => void }) {
   const tokenDocument = useDocumentStore((state) => state.document);
@@ -135,15 +144,38 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
         const set = tokenDocument.sets.get(name);
         return set ? serializeTokenSet(set) : "{}";
       });
-      const result = await provider().writeTokens(
-        files,
-        "chore(tokens): sync from okeytokey studio",
-      );
-      saveBase(tokenDocument);
-      setDryRun(undefined);
-      setStatus(
-        `Pushed ${String(files.length)} file(s) as ${result.commitSha.slice(0, 7)} on ${result.branch}`,
-      );
+
+      const patterns = settings.protectedPaths
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const changedPaths = dryRun?.sets.flatMap((s) => s.changes.map((c) => c.path)) ?? [];
+      const needsPR =
+        patterns.length > 0 && changedPaths.some((p) => matchesProtectedPath(p, patterns));
+
+      const commitMessage = "chore(tokens): sync from okeytokey studio";
+
+      if (needsPR) {
+        const branchName = `okeytokey/sync-${Date.now().toString()}`;
+        await provider().createBranch(branchName);
+        await provider().writeTokens(files, commitMessage, branchName);
+        const pr = await provider().openPullRequest({
+          title: commitMessage,
+          body: changedPaths.map((p) => `- ${p}`).join("\n"),
+          head: branchName,
+          base: settings.branch,
+        });
+        saveBase(tokenDocument);
+        setDryRun(undefined);
+        setStatus(`Changes touch protected paths — PR #${String(pr.number)} opened: ${pr.url}`);
+      } else {
+        const result = await provider().writeTokens(files, commitMessage);
+        saveBase(tokenDocument);
+        setDryRun(undefined);
+        setStatus(
+          `Pushed ${String(files.length)} file(s) as ${result.commitSha.slice(0, 7)} on ${result.branch}`,
+        );
+      }
     });
 
   const runPull = () =>
@@ -190,7 +222,7 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog title="Sync with GitHub" onClose={onClose}>
       <div className="editor-grid-2">
-        {FIELDS.map(({ key, label, secret }) => (
+        {FIELDS.map(({ key, label, secret, placeholder }) => (
           <Field key={key} label={label}>
             {(id) => (
               <TextInput
@@ -198,6 +230,7 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
                 mono
                 type={secret ? "password" : "text"}
                 value={settings[key]}
+                placeholder={placeholder}
                 data-testid={`sync-${key}`}
                 onChange={(event) => {
                   persistSettings({ ...settings, [key]: event.target.value });

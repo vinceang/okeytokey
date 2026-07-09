@@ -109,7 +109,7 @@ describe("applyProposal", () => {
     const proposal: TokenChangeProposal = {
       summary: "Mixed bag",
       operations: [
-        { op: "create", set: "global", path: "spacing.bad", type: "dimension", value: "16em" },
+        { op: "create", set: "global", path: "spacing.bad", type: "dimension", value: "16" },
         { op: "update", set: "ghost-set", path: "a", value: 1 },
         { op: "delete", set: "global", path: "does.not.exist" },
         { op: "create", set: "global", path: "semantic.ok", type: "color", value: "#000000" },

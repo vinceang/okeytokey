@@ -58,7 +58,8 @@ export interface SyncProvider {
   authenticate(): Promise<{ login: string }>;
   listBranches(): Promise<string[]>;
   readTokens(): Promise<RemoteTokens>;
-  writeTokens(files: readonly SyncFile[], message: string): Promise<WriteResult>;
+  /** Write files as one atomic commit. Pass `branch` to target a branch other than the configured one. */
+  writeTokens(files: readonly SyncFile[], message: string, branch?: string): Promise<WriteResult>;
   createBranch(name: string, fromBranch?: string): Promise<void>;
   openPullRequest(options: {
     title: string;
@@ -69,6 +70,35 @@ export interface SyncProvider {
   healthCheck(): Promise<DoctorReport>;
   /** The structured trace of every operation this provider instance ran. */
   trace(): readonly SyncTraceEntry[];
+}
+
+/**
+ * Returns true if `tokenPath` matches any of the CODEOWNERS-style glob patterns.
+ * Segments are dot-separated. `*` matches exactly one segment; `**` matches one
+ * or more segments.
+ *
+ * Examples:
+ *   "colors.*"   matches "colors.blue" but not "colors.primary.500"
+ *   "colors.**"  matches "colors.blue" and "colors.primary.500"
+ *   "**"         matches any path
+ */
+export function matchesProtectedPath(tokenPath: string, patterns: readonly string[]): boolean {
+  return patterns.some((pattern) => {
+    const parts = pattern.split(".");
+    let regexStr = "";
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i] ?? "";
+      const sep = i === 0 ? "" : "\\.";
+      if (part === "**") {
+        regexStr += `${sep}[^.]+(\\.[^.]+)*`;
+      } else if (part === "*") {
+        regexStr += `${sep}[^.]+`;
+      } else {
+        regexStr += `${sep}${part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`;
+      }
+    }
+    return new RegExp(`^${regexStr}$`).test(tokenPath);
+  });
 }
 
 export class SyncError extends Error {
