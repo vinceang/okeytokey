@@ -22,8 +22,11 @@ PRD), but these PRD commitments are missing, in priority order:
    - ~~Missing lint rules: `ownership-required`, `layer-skip`,
      `no-raw-value-in-upper-layers`~~ — shipped (all 9 of the PRD's rules exist;
      `ownership-required` is off by default until ownership is configured)
-   - Protected paths (`requireReview`) → branch + PR routing in sync
-     (subsumes the "PR-based sync flow" item under Later)
+   - ~~Protected paths (`requireReview`) → branch + PR routing in sync
+     (subsumes the "PR-based sync flow" item under Later)~~ — shipped:
+     `matchesProtectedPath()` glob utility in `@okeytokey/sync`, optional
+     branch override on `writeTokens`, SyncDialog "Protected paths" field;
+     changes touching protected paths open a PR instead of pushing directly
    - Per-token audit history: Git history × the semantic differ
    - Releases: tag a snapshot, auto-changelog from diff + impact analysis,
      rollback as a dry-run diff
