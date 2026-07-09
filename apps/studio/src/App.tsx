@@ -8,7 +8,7 @@ import { CommandPalette } from "./components/CommandPalette.js";
 import { DiagnosticsPanel } from "./components/DiagnosticsPanel.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import { Inspector } from "./components/Inspector.js";
-import { Onboarding, ONBOARDED_KEY } from "./components/Onboarding.js";
+import { Onboarding } from "./components/Onboarding.js";
 import { DimensionScaleDialog } from "./components/DimensionScaleDialog.js";
 import { ScaleDialog } from "./components/ScaleDialog.js";
 import { Sidebar } from "./components/Sidebar.js";
@@ -18,9 +18,11 @@ import { NewSetDialog, NewTokenDialog } from "./components/dialogs.js";
 import { useResolver } from "./hooks/use-resolver.js";
 import { useDocumentStore } from "./state/document-store.js";
 import { createStorage, initPersistence } from "./state/persistence.js";
+import { projectDbName, projectOnboardedKey } from "./state/projects.js";
 import { useUiStore } from "./state/ui-store.js";
 
-export function App() {
+export function App({ projectId }: { projectId: string }) {
+  const onboardedKey = projectOnboardedKey(projectId);
   const hydrated = useDocumentStore((state) => state.hydrated);
   const document = useDocumentStore((state) => state.document);
   const undo = useDocumentStore((state) => state.undo);
@@ -43,11 +45,11 @@ export function App() {
 
   useEffect(() => {
     let stop: (() => void) | undefined;
-    void initPersistence(createStorage()).then((cleanup) => {
+    void initPersistence(createStorage(projectDbName(projectId)), onboardedKey).then((cleanup) => {
       stop = cleanup;
     });
     return () => stop?.();
-  }, []);
+  }, [projectId, onboardedKey]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -80,11 +82,12 @@ export function App() {
     );
   }
 
-  const needsOnboarding = document.sets.size === 0 && localStorage.getItem(ONBOARDED_KEY) === null;
+  const needsOnboarding = document.sets.size === 0 && localStorage.getItem(onboardedKey) === null;
   if (needsOnboarding) {
     return (
       <div className="okey-app">
         <Onboarding
+          onboardedKey={onboardedKey}
           onConnectGitHub={() => {
             openDialog("sync");
           }}
@@ -174,6 +177,7 @@ export function App() {
       )}
       {dialog === "sync" && (
         <SyncDialog
+          projectId={projectId}
           onClose={() => {
             openDialog(undefined);
           }}

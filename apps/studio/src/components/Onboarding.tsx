@@ -7,22 +7,26 @@ import { useDocumentStore } from "../state/document-store.js";
 import { starterDocument } from "../state/starter.js";
 import { useUiStore } from "../state/ui-store.js";
 
-export const ONBOARDED_KEY = "okeytokey.onboarded";
-
 /**
  * First-run wizard. Three ways in, attacking the configuration learning
  * curve head-on: a scaffolded primitive → semantic starter, importing
  * existing DTCG/Tokens Studio JSON, or connecting GitHub (which opens the
  * sync dialog with the connection doctor one click away).
  */
-export function Onboarding({ onConnectGitHub }: { onConnectGitHub: () => void }) {
+export function Onboarding({
+  onboardedKey,
+  onConnectGitHub,
+}: {
+  onboardedKey: string;
+  onConnectGitHub: () => void;
+}) {
   const hydrate = useDocumentStore((state) => state.hydrate);
   const execute = useDocumentStore((state) => state.execute);
   const setActiveSet = useUiStore((state) => state.setActiveSet);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const finish = () => {
-    localStorage.setItem(ONBOARDED_KEY, "1");
+    localStorage.setItem(onboardedKey, "1");
   };
 
   const useStarter = () => {

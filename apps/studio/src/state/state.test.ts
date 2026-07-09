@@ -142,7 +142,7 @@ describe("persistence", () => {
     };
 
     // Real timers: fake timers stall IndexedDB's internal promises.
-    const stop = await initPersistence(storage, 10);
+    const stop = await initPersistence(storage, "okeytokey.onboarded", 10);
     const state = useDocumentStore.getState();
     expect(state.hydrated).toBe(true);
     expect(state.document.sets.size).toBeGreaterThan(0); // starter content

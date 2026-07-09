@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { App } from "./App.js";
+import { Router } from "./Router.js";
 import "@okeytokey/ui/tokens.css";
 import "@okeytokey/ui/components.css";
 import "./index.css";
@@ -13,6 +13,6 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <Router />
   </StrictMode>,
 );

@@ -1668,3 +1668,109 @@ a.sidebar-item {
   justify-content: flex-end;
   gap: var(--space-2);
 }
+
+/* ── Dashboard ─────────────────────────────────────────────────── */
+
+.dashboard {
+  min-height: 100vh;
+  background: var(--surface-base);
+  color: var(--text-primary);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dashboard-wordmark {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
+.dashboard-title {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.dashboard-empty {
+  color: var(--text-secondary);
+  margin: var(--space-6) 0;
+}
+
+.dashboard-create {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.dashboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-project {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+}
+
+.dashboard-project-name {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+
+.dashboard-project-name:hover .dashboard-project-title {
+  text-decoration: underline;
+}
+
+.dashboard-project-title {
+  font-weight: 500;
+  font-size: var(--text-base);
+}
+
+.dashboard-project-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.dashboard-project-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.dashboard-rename {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex: 1;
+}

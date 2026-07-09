@@ -95,9 +95,14 @@ export function createStorage(dbName?: string): StudioStorage {
 /**
  * Wire a storage to the document store: hydrate once, then autosave
  * (debounced) on every revision. Returns an unsubscribe function.
+ *
+ * `onboardedKey` is the localStorage key that marks this project as having
+ * been through onboarding; used to seed the starter for returning users
+ * who open a project with an empty database (e.g. after clearing it).
  */
 export async function initPersistence(
   storage: StudioStorage,
+  onboardedKey = "okeytokey.onboarded",
   debounceMs = 400,
 ): Promise<() => void> {
   const store = useDocumentStore;
@@ -111,7 +116,7 @@ export async function initPersistence(
   if (
     persisted.document.sets.size === 0 &&
     typeof localStorage !== "undefined" &&
-    localStorage.getItem("okeytokey.onboarded") !== null
+    localStorage.getItem(onboardedKey) !== null
   ) {
     // Returning user with an empty database (cleared, or finished onboarding
     // without content) — seed the starter so the app is never a dead end.

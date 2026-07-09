@@ -20,6 +20,7 @@ import {
 import { Button, Field, TextInput } from "@okeytokey/ui";
 
 import { useDocumentStore } from "../state/document-store.js";
+import { projectSyncBaseKey, projectSyncSettingsKey } from "../state/projects.js";
 import { Dialog } from "./dialogs.js";
 
 /**
@@ -38,12 +39,9 @@ interface SyncSettings {
   protectedPaths: string;
 }
 
-const SETTINGS_KEY = "okeytokey.sync.github";
-const BASE_KEY = "okeytokey.sync.base";
-
-function loadSettings(): SyncSettings {
+function loadSettings(settingsKey: string): SyncSettings {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = localStorage.getItem(settingsKey);
     if (raw !== null) return JSON.parse(raw) as SyncSettings;
   } catch {
     /* fall through */
@@ -52,9 +50,9 @@ function loadSettings(): SyncSettings {
 }
 
 /** Last-synced snapshot: the base side of the three-way merge. */
-function loadBase(): TokenDocument | undefined {
+function loadBase(baseKey: string): TokenDocument | undefined {
   try {
-    const raw = localStorage.getItem(BASE_KEY);
+    const raw = localStorage.getItem(baseKey);
     if (raw === null) return undefined;
     const files = JSON.parse(raw) as { name: string; json: string }[];
     return createTokenDocument(files.map((file) => parseTokenSet(file.name, file.json)));
@@ -63,12 +61,12 @@ function loadBase(): TokenDocument | undefined {
   }
 }
 
-function saveBase(document: TokenDocument): void {
+function saveBase(baseKey: string, document: TokenDocument): void {
   const files = [...document.sets.values()].map((set) => ({
     name: set.name,
     json: serializeTokenSet(set),
   }));
-  localStorage.setItem(BASE_KEY, JSON.stringify(files));
+  localStorage.setItem(baseKey, JSON.stringify(files));
 }
 
 function documentFromFiles(files: readonly { path: string; content: string }[]): TokenDocument {
@@ -94,12 +92,14 @@ const FIELDS: { key: keyof SyncSettings; label: string; secret?: boolean; placeh
     },
   ];
 
-export function SyncDialog({ onClose }: { onClose: () => void }) {
+export function SyncDialog({ projectId, onClose }: { projectId: string; onClose: () => void }) {
+  const settingsKey = projectSyncSettingsKey(projectId);
+  const baseKey = projectSyncBaseKey(projectId);
   const tokenDocument = useDocumentStore((state) => state.document);
   const hydrate = useDocumentStore((state) => state.hydrate);
   const themes = useDocumentStore((state) => state.themes);
 
-  const [settings, setSettings] = useState(loadSettings);
+  const [settings, setSettings] = useState(() => loadSettings(settingsKey));
   const [report, setReport] = useState<DoctorReport>();
   const [dryRun, setDryRun] = useState<DocumentDiff>();
   const [conflicts, setConflicts] = useState<MergeConflict[]>();
@@ -111,7 +111,7 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
 
   const persistSettings = (next: SyncSettings) => {
     setSettings(next);
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    localStorage.setItem(settingsKey, JSON.stringify(next));
   };
 
   const guard = async (label: string, action: () => Promise<void>) => {
@@ -165,12 +165,12 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
           head: branchName,
           base: settings.branch,
         });
-        saveBase(tokenDocument);
+        saveBase(baseKey, tokenDocument);
         setDryRun(undefined);
         setStatus(`Changes touch protected paths — PR #${String(pr.number)} opened: ${pr.url}`);
       } else {
         const result = await provider().writeTokens(files, commitMessage);
-        saveBase(tokenDocument);
+        saveBase(baseKey, tokenDocument);
         setDryRun(undefined);
         setStatus(
           `Pushed ${String(files.length)} file(s) as ${result.commitSha.slice(0, 7)} on ${result.branch}`,
@@ -182,18 +182,18 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
     guard("Pull", async () => {
       const remote = await provider().readTokens();
       const remoteDocument = documentFromFiles(remote.files);
-      const base = loadBase();
+      const base = loadBase(baseKey);
       if (!base) {
         // No base: remote replaces local (first sync).
         hydrate(remoteDocument, themes);
-        saveBase(remoteDocument);
+        saveBase(baseKey, remoteDocument);
         setStatus("Pulled remote tokens (no local base — remote adopted).");
         return;
       }
       const result = mergeDocuments(base, tokenDocument, remoteDocument);
       if (result.conflicts.length === 0) {
         hydrate(result.document, themes);
-        saveBase(remoteDocument);
+        saveBase(baseKey, remoteDocument);
         setStatus("Pulled and merged cleanly.");
       } else {
         setMerged(result.document);
@@ -210,7 +210,7 @@ export function SyncDialog({ onClose }: { onClose: () => void }) {
     setConflicts(remaining);
     if (remaining.length === 0) {
       hydrate(nextDocument, themes);
-      saveBase(nextDocument);
+      saveBase(baseKey, nextDocument);
       setConflicts(undefined);
       setMerged(undefined);
       setStatus("Merge complete.");
