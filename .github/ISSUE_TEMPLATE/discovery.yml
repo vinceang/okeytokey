@@ -1,0 +1,128 @@
+name: Discovery or architecture decision
+description: Investigate an uncertain area, compare approaches, validate feasibility, or prepare an ADR before implementation.
+title: "[Discovery]: "
+labels:
+  - discovery
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Discovery issues reduce uncertainty. They should end with evidence, a recommendation, and clearly separated follow-up implementation work—not an indefinite research document.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Decision or question
+      description: What material uncertainty must be resolved?
+      placeholder: We need to determine whether...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and user impact
+      description: Why does this matter now, and which users, releases, or workflows depend on the answer?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state
+      description: Summarize the existing implementation, prior decisions, known constraints, and evidence already available.
+      placeholder: |
+        Current implementation:
+        Relevant ADRs:
+        Relevant code/packages:
+        Known constraints:
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options to evaluate
+      description: List credible approaches. Include retaining the status quo when relevant.
+      placeholder: |
+        1. Option A
+        2. Option B
+        3. Keep current behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Evaluation criteria
+      description: Define how options will be compared.
+      placeholder: |
+        - DTCG portability
+        - Data fidelity
+        - Local-first behavior
+        - Complexity and maintenance
+        - Accessibility
+        - Performance at 10,000 tokens
+        - Security/privacy
+        - Migration impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: research
+    attributes:
+      label: Required investigation
+      description: Specify prototypes, source review, fixture analysis, benchmarks, user testing, Figma testing, provider evaluation, or external standards research.
+      placeholder: |
+        - Inspect...
+        - Prototype...
+        - Test against...
+        - Measure...
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Expected deliverables
+      description: Define what closes this discovery ticket.
+      placeholder: |
+        - [ ] Findings documented
+        - [ ] Recommendation with tradeoffs
+        - [ ] ADR created or updated if required
+        - [ ] Follow-up implementation issues created
+        - [ ] Planning/roadmap updated
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Boundaries and non-goals
+      description: Clarify what this investigation will not attempt to implement or decide.
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and irreversible decisions
+      description: Identify data-format, compatibility, architectural, migration, provider-lock-in, or security concerns.
+
+  - type: input
+    id: release
+    attributes:
+      label: Target release or decision deadline
+      placeholder: Before 0.9 implementation begins
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checklist
+      options:
+        - label: I inspected the current implementation and relevant ADRs before defining this discovery.
+          required: true
+        - label: The expected result is a decision or reduced uncertainty, not an open-ended research exercise.
+          required: true

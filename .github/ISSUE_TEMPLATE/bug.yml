@@ -1,0 +1,138 @@
+name: Bug report
+description: Report incorrect behavior, regressions, crashes, data loss, or fidelity problems.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include API keys, access tokens, private repositories, or proprietary token documents. Use a minimal sanitized reproduction when possible.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, and what is the user-visible impact?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open...
+        2. Import...
+        3. Select...
+        4. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Data loss, security, or unrecoverable corruption
+        - Core workflow blocked
+        - Major incorrect result or fidelity loss
+        - Degraded workflow with workaround
+        - Minor visual or usability defect
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - Schema or parsing
+        - Core resolution, validation, diff, refactor, or mutation
+        - Studio UI or persistence
+        - Git sync or governance
+        - Transform, export, or CLI
+        - Figma plugin or bridge
+        - AI provider or proposal workflow
+        - Documentation or setup
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OkeyToKey version/commit, browser, operating system, Node/pnpm versions, Figma version, AI provider/model, or Git host when relevant.
+      placeholder: |
+        OkeyToKey commit:
+        Browser/OS:
+        Node/pnpm:
+        Other integration versions:
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction or sanitized sample
+      description: Link a reproduction repository or paste the smallest non-sensitive token sample that demonstrates the issue.
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Paste sanitized errors, sync traces, console output, screenshots, recordings, or fidelity-report entries. Remove secrets first.
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Is this a regression?
+      options:
+        - Yes; it worked previously
+        - No; it has never worked
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Recovery or workaround
+      description: Can the user undo, reload, restore, retry, or use another path? State whether data is at risk.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Fix acceptance criteria
+      placeholder: |
+        - [ ] The reproduction no longer fails
+        - [ ] A regression test is added
+        - [ ] Existing documents remain compatible
+        - [ ] No silent data loss or fidelity loss occurs
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I removed credentials and private data from this report.
+          required: true
+        - label: I searched existing issues for the same problem.
+          required: true

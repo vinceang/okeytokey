@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Product and implementation plan
+    url: https://github.com/vinceang/okeytokey/blob/main/docs/planning/product-implementation-plan.md
+    about: Review the release strategy, priorities, and implementation sequence before proposing roadmap work.
+  - name: Architecture decisions
+    url: https://github.com/vinceang/okeytokey/tree/main/docs/adr
+    about: Read accepted decisions before proposing changes to core architecture or behavior.
+  - name: Questions and early ideas
+    url: https://github.com/vinceang/okeytokey/discussions
+    about: Use Discussions for questions or ideas that are not ready to become scoped work, if Discussions are enabled.

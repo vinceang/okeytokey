@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+> **Canonical agent policy:** Read and follow [`AGENTS.md`](./AGENTS.md) before planning, editing files, implementing a GitHub issue, or opening a pull request. This file adds Claude-specific repository context; when guidance overlaps, `AGENTS.md` is authoritative.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What this is
@@ -57,10 +59,11 @@ Put logic at the lowest layer it fits: token semantics belong in `core` (pure, n
 
 - `docs/adr/` — one ADR per core design decision (resolution semantics, undo model, sync merge, theme groups, AI contract, governance…). **Before changing behavior in any of these areas, read the matching ADR**; if a change contradicts one, that's an ADR update, not just a code change.
 - `docs/prd.md` is the product source of truth; `ROADMAP.md` records what's deliberately deferred and the current gap analysis (governance epic is the main unbuilt PRD item, per ADR 0007).
+- `docs/planning/product-implementation-plan.md` defines the post-v1 release strategy and implementation sequence.
 
 ## Conventions
 
 - Conventional commits with package scope: `feat(studio): …`, `fix(schema): …`.
 - Version-relevant changes to published packages need a changeset (`pnpm changeset`).
-- CI runs the full gauntlet on every push: build, typecheck, lint, format check, boundaries, unit tests (core coverage ≥90%), Playwright including axe WCAG 2.1 AA checks and the perf benchmark. Match that bar locally before pushing; new studio surfaces should stay axe-clean.
+- CI runs the full gauntlet on every push: build, typecheck, lint, format check, boundaries, unit tests (core coverage ≥90%), Playwright including axe WCAG checks and the perf benchmark. Match that bar locally before pushing; new studio surfaces should stay axe-clean.
 - Tests live next to sources (`*.test.ts`, vitest, shared preset from `@okeytokey/vitest-config`); core also uses fast-check for property tests where invariants fit.
