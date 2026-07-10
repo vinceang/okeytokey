@@ -1,0 +1,216 @@
+name: Implementation
+description: Plan a user-facing feature, platform capability, or meaningful engineering deliverable.
+title: "[Implementation]: "
+labels:
+  - implementation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a meaningful product or platform outcome. Keep low-level tasks as checklists or sub-issues unless they need separate ownership or sequencing.
+
+        Before implementation begins, contributors and agents must follow `AGENTS.md` and read relevant ADRs and planning documents.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user, product, or system problem are we solving? Describe the current limitation and who it affects.
+      placeholder: Today, users cannot...
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should become observably possible when this issue is complete?
+      placeholder: After this work, a user can...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: In scope
+      description: List the work included in this ticket.
+      placeholder: |
+        - Included behavior
+        - Included package or UI work
+        - Required validation or migration work
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: State exclusions so the issue does not expand silently.
+      placeholder: |
+        - Follow-up capability
+        - Unrelated refactor
+    validations:
+      required: true
+
+  - type: textarea
+    id: architecture
+    attributes:
+      label: Architecture and affected areas
+      description: Identify affected packages, apps, data contracts, ADRs, storage, sync, transforms, Figma, or provider boundaries. Use "To be discovered" when this is legitimately unknown.
+      placeholder: |
+        Affected areas:
+        - @okeytokey/core
+        - apps/studio
+
+        Relevant ADRs:
+        - ADR 0003
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Provide observable, testable completion conditions.
+      placeholder: |
+        - [ ] The user can...
+        - [ ] Invalid input produces...
+        - [ ] Unit/integration/E2E tests cover...
+        - [ ] Documentation is updated
+    validations:
+      required: true
+
+  - type: dropdown
+    id: accessibility
+    attributes:
+      label: Accessibility impact
+      options:
+        - None or non-UI change
+        - Existing behavior only; regression testing required
+        - New or changed UI; keyboard and screen-reader review required
+        - Material WCAG 2.2 AA acceptance criteria required
+    validations:
+      required: true
+
+  - type: textarea
+    id: accessibility-details
+    attributes:
+      label: Accessibility considerations
+      description: Describe keyboard behavior, focus, semantics, announcements, drag alternatives, contrast, or why no impact exists.
+      placeholder: The dialog must trap and restore focus...
+
+  - type: dropdown
+    id: performance
+    attributes:
+      label: Performance impact
+      options:
+        - None expected
+        - Must preserve existing performance budgets
+        - Requires a new benchmark or budget
+        - Performance impact is part of discovery
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance-details
+    attributes:
+      label: Performance considerations
+      description: Include scale assumptions such as 10,000 tokens, latency, cancellation, caching, or determinism.
+
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Compatibility or fidelity impact
+      options:
+        - None
+        - DTCG/schema or round-trip impact
+        - Import/migration impact
+        - Export/transform impact
+        - Figma mapping or fidelity impact
+        - Git/sync/release compatibility impact
+        - Multiple areas
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility-details
+    attributes:
+      label: Compatibility details
+      description: Explain portability, extension, migration, output, sync, or fidelity requirements. Silent data loss is never acceptable.
+
+  - type: dropdown
+    id: ai-impact
+    attributes:
+      label: AI impact
+      options:
+        - None
+        - Uses existing AI behavior only
+        - Adds or changes an AI workflow
+        - Changes provider/context/proposal contracts
+        - Requires AI evaluation work
+    validations:
+      required: true
+
+  - type: textarea
+    id: ai-details
+    attributes:
+      label: AI considerations
+      description: State proposal validation, evaluation fixtures, privacy, provider capabilities, transparency, or why no AI impact exists.
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and privacy considerations
+      description: Cover credentials, browser storage, diagnostics, data transmission, permissions, or state that none apply.
+      placeholder: No credentials are introduced or transmitted...
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Test plan
+      description: Identify unit, property, integration, E2E, accessibility, performance, determinism, migration, or manual tests.
+      placeholder: |
+        - Unit tests for...
+        - Playwright coverage for...
+        - Manual Figma test for...
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and sequencing
+      description: List blockers, blocked work, prerequisite ADRs, related issues, or release sequencing.
+      placeholder: Blocked by #...; blocks #...
+
+  - type: input
+    id: release
+    attributes:
+      label: Target release or milestone
+      description: Example: 0.8 — Trustworthy Preview
+      placeholder: 0.8 — Trustworthy Preview
+    validations:
+      required: true
+
+  - type: textarea
+    id: documentation
+    attributes:
+      label: Documentation requirements
+      description: List user guides, API docs, ADRs, roadmap updates, migration notes, or release notes.
+      placeholder: Update docs/... and ROADMAP.md
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checklist
+      options:
+        - label: I checked the current implementation before filing this issue.
+          required: true
+        - label: I linked or identified relevant planning documents and ADRs.
+          required: true
+        - label: The issue describes a meaningful deliverable rather than an unprioritized collection of tiny tasks.
+          required: true
