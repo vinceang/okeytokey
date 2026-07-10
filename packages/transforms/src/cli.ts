@@ -75,24 +75,22 @@ async function runDiff(ref: string, configPath: string) {
 
   // Read each set file at <ref> via git show. Falls back gracefully when a
   // file didn't exist at that ref (new file → empty set).
-  const beforeSets = await Promise.all(
-    config.sets.map(async (setPath) => {
-      const absPath = resolve(baseDir, setPath);
-      const repoRelative = absPath.replace(
-        `${execSync("git rev-parse --show-toplevel").toString().trim()}/`,
-        "",
-      );
-      try {
-        const content = execSync(`git show ${ref}:${repoRelative}`, {
-          encoding: "utf8",
-          stdio: ["pipe", "pipe", "pipe"],
-        });
-        return parseTokenSet(basename(setPath, ".json"), content);
-      } catch {
-        return parseTokenSet(basename(setPath, ".json"), "{}");
-      }
-    }),
-  );
+  const beforeSets = config.sets.map((setPath) => {
+    const absPath = resolve(baseDir, setPath);
+    const repoRelative = absPath.replace(
+      `${execSync("git rev-parse --show-toplevel").toString().trim()}/`,
+      "",
+    );
+    try {
+      const content = execSync(`git show ${ref}:${repoRelative}`, {
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      return parseTokenSet(basename(setPath, ".json"), content);
+    } catch {
+      return parseTokenSet(basename(setPath, ".json"), "{}");
+    }
+  });
   const before = createTokenDocument(beforeSets);
   const diff = diffDocuments(before, after);
 
