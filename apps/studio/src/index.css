@@ -92,26 +92,32 @@ a.sidebar-item {
   color: var(--text-tertiary);
 }
 
+/* Layer badges read as visual weight, not hue: primitive is the densest
+   (foundation), component the lightest (surface, about to be painted over).
+   Kept off-hue on purpose — TokenTypeIcon already carries a per-type hue
+   family in the same rows, and a second coded color system there would
+   compete with it rather than add information. */
 .layer-badge {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   padding: 1px 5px;
   border-radius: 3px;
   line-height: 1.4;
   text-transform: uppercase;
 }
 .layer-badge--primitive {
-  background: color-mix(in srgb, #6366f1 15%, transparent);
-  color: #6366f1;
+  background: var(--gray-800);
+  color: #fff;
 }
 .layer-badge--semantic {
-  background: color-mix(in srgb, #f59e0b 15%, transparent);
-  color: #b45309;
+  background: var(--gray-200);
+  color: var(--gray-800);
 }
 .layer-badge--component {
-  background: color-mix(in srgb, #10b981 15%, transparent);
-  color: #059669;
+  background: transparent;
+  color: var(--text-tertiary);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
 /* A set/theme row: the item flexes, the kebab trigger stays on the same line
@@ -851,7 +857,7 @@ a.sidebar-item {
   font-family: var(--font-sans);
   color: var(--text-primary);
   background: var(--surface-app);
-  border: 1px solid var(--border-focus, #3b82f6);
+  border: 1px solid var(--accent-500);
   border-radius: var(--radius-sm);
   outline: none;
   width: 100%;
@@ -1047,7 +1053,7 @@ a.sidebar-item {
 
 .gradient-stop-slider {
   flex: 1;
-  accent-color: var(--accent-primary, #3b82f6);
+  accent-color: var(--accent-600);
 }
 
 .gradient-stop-pct {
@@ -1276,14 +1282,56 @@ a.sidebar-item {
 
 .onboarding-card h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: var(--text-xl);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
 .onboarding-lede {
-  margin: var(--space-2) 0 var(--space-5);
+  margin: var(--space-2) 0 var(--space-4);
   color: var(--text-secondary);
+}
+
+/* The product's core mental model (primitive → semantic → component), shown
+   before the user picks a starting point. Same weight language as
+   .layer-badge: solid → tonal → outline, foundation to surface. */
+.onboarding-tiers {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.onboarding-tier {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.onboarding-tier--primitive {
+  background: var(--gray-800);
+  color: #fff;
+}
+
+.onboarding-tier--semantic {
+  background: var(--gray-200);
+  color: var(--gray-800);
+}
+
+.onboarding-tier--component {
+  background: transparent;
+  color: var(--text-tertiary);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.onboarding-tier-arrow {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
 }
 
 .onboarding-options {
@@ -1673,7 +1721,7 @@ a.sidebar-item {
 
 .dashboard {
   min-height: 100vh;
-  background: var(--surface-base);
+  background: var(--surface-app);
   color: var(--text-primary);
 }
 
@@ -1682,13 +1730,14 @@ a.sidebar-item {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--line-subtle);
 }
 
 .dashboard-wordmark {
+  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .dashboard-main {
@@ -1699,8 +1748,10 @@ a.sidebar-item {
 
 .dashboard-title {
   margin: 0 0 var(--space-5);
+  font-family: var(--font-display);
   font-size: var(--text-xl);
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .dashboard-empty {
@@ -1729,9 +1780,10 @@ a.sidebar-item {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--line-subtle);
   border-radius: var(--radius-md);
   background: var(--surface-panel);
+  box-shadow: var(--shadow-raised);
 }
 
 .dashboard-project-name {

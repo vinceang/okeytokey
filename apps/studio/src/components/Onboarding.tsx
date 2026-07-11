@@ -59,6 +59,13 @@ export function Onboarding({
           Design tokens with decisions attached. Pick a starting point — you can always import or
           connect later.
         </p>
+        <div className="onboarding-tiers" aria-hidden="true">
+          <span className="onboarding-tier onboarding-tier--primitive">primitive</span>
+          <span className="onboarding-tier-arrow">→</span>
+          <span className="onboarding-tier onboarding-tier--semantic">semantic</span>
+          <span className="onboarding-tier-arrow">→</span>
+          <span className="onboarding-tier onboarding-tier--component">component</span>
+        </div>
         <div className="onboarding-options">
           <button
             type="button"

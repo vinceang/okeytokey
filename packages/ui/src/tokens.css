@@ -6,7 +6,13 @@
  * Type:    11 12 13 14 16 20  (dense tool scale; hierarchy via weight+color)
  * Weights: 400 / 500 / 600
  * Grays:   slightly cool (210 hue) so the surface doesn't feel sterile
- * Accent:  one blue, used sparingly (primary actions, focus, selection)
+ * Accent:  one muted slate-violet, used sparingly (primary actions, focus,
+ *          selection). Desaturated on purpose — it sits in the gap between
+ *          TokenTypeIcon's dimension (217) and color (265) hues without
+ *          reading as "another vivid type chip," and it's neither the
+ *          generic SaaS blue nor a vivid Tailwind-indigo button.
+ * Layer (primitive/semantic/component) is expressed as ink weight, not hue —
+ * see .layer-badge in apps/studio/src/index.css.
  */
 
 :root {
@@ -27,7 +33,10 @@
   --text-lg: 16px;
   --text-xl: 20px;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Identity moments only (onboarding/dashboard headlines, dialog titles) —
+     never body/UI chrome. Matches the sidebar wordmark's family. */
+  --font-display: "Outfit", var(--font-sans);
 
   /* Cool gray ramp */
   --gray-25: hsl(210 30% 98.5%);
@@ -42,13 +51,13 @@
   --gray-800: hsl(212 20% 16%);
   --gray-900: hsl(213 25% 10%);
 
-  /* Accent (blue) */
-  --accent-50: hsl(217 90% 96%);
-  --accent-100: hsl(217 88% 92%);
-  --accent-300: hsl(217 85% 72%);
-  --accent-500: hsl(217 85% 55%);
-  --accent-600: hsl(220 80% 48%);
-  --accent-700: hsl(222 75% 40%);
+  /* Accent (muted slate-violet) */
+  --accent-50: hsl(235 40% 96%);
+  --accent-100: hsl(235 35% 92%);
+  --accent-300: hsl(236 30% 68%);
+  --accent-500: hsl(238 34% 48%);
+  --accent-600: hsl(240 38% 38%);
+  --accent-700: hsl(242 42% 28%);
 
   /* Semantic status */
   --danger-500: hsl(0 72% 51%);
