@@ -52,7 +52,27 @@ export function Dashboard() {
   return (
     <div className="okey-app dashboard">
       <header className="dashboard-header">
-        <span className="dashboard-wordmark">okeytokey</span>
+        <span className="dashboard-wordmark" aria-label="okeytokey">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 320 56"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <text
+              x="160"
+              y="43"
+              textAnchor="middle"
+              fontFamily="Outfit, sans-serif"
+              fontWeight="300"
+              fontSize="40"
+              letterSpacing="4.5"
+              fill="currentColor"
+            >
+              okeytokey
+            </text>
+          </svg>
+        </span>
         <Button
           variant="primary"
           onClick={() => {
