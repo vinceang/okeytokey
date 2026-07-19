@@ -9,13 +9,20 @@ interface Location {
 }
 
 function parseHash(hash: string): Location {
+  if (hash === "#/demo") return { view: "project", projectId: "default" };
   const match = /^#\/project\/(.+)$/.exec(hash);
   if (match?.[1]) return { view: "project", projectId: match[1] };
   return { view: "dashboard" };
 }
 
 export function Router() {
-  const [location, setLocation] = useState<Location>(() => parseHash(window.location.hash));
+  const [location, setLocation] = useState<Location>(() => {
+    // Allow sharing the demo as a plain path; hand off to hash routing after load.
+    if (window.location.pathname === "/demo") {
+      window.history.replaceState(null, "", "/#/demo");
+    }
+    return parseHash(window.location.hash);
+  });
 
   useEffect(() => {
     const onHashChange = () => setLocation(parseHash(window.location.hash));

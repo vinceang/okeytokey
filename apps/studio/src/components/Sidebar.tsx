@@ -8,6 +8,7 @@ import { cmdImportSet, cmdRemoveSet, cmdRenameSet, cmdSortSet } from "../state/c
 import { useDocumentStore } from "../state/document-store.js";
 import { useUiStore } from "../state/ui-store.js";
 import { RowMenu } from "./RowMenu.js";
+import { Wordmark } from "./Wordmark.js";
 
 const LAYER_ABBR: Record<Layer, string> = {
   primitive: "prim",
@@ -63,25 +64,7 @@ export function Sidebar() {
   return (
     <nav className="studio-sidebar">
       <h1 className="sidebar-logo" aria-label="okeytokey">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 320 56"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <text
-            x="160"
-            y="43"
-            textAnchor="middle"
-            fontFamily="Outfit, sans-serif"
-            fontWeight="300"
-            fontSize="40"
-            letterSpacing="4.5"
-            fill="currentColor"
-          >
-            okeytokey
-          </text>
-        </svg>
+        <Wordmark />
       </h1>
 
       <div className="sidebar-section" data-testid="sets-section">
