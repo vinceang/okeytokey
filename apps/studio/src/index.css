@@ -619,7 +619,7 @@ a.sidebar-item {
 .token-grid-action-btn:hover {
   color: var(--text-primary);
   background: var(--surface-hover);
-  border-color: var(--line-default);
+  border-color: var(--line-strong);
 }
 
 .token-list-row--drop {
@@ -1014,7 +1014,7 @@ a.sidebar-item {
 .gradient-preview {
   height: 40px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--line-subtle);
   margin-bottom: var(--space-2);
 }
 
@@ -1039,7 +1039,7 @@ a.sidebar-item {
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--line-subtle);
   border-radius: var(--radius-sm);
   cursor: pointer;
   background: none;
