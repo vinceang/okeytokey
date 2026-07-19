@@ -19,11 +19,13 @@ import { useResolver } from "./hooks/use-resolver.js";
 import { useDocumentStore } from "./state/document-store.js";
 import { createStorage, initPersistence } from "./state/persistence.js";
 import { projectDbName, projectOnboardedKey } from "./state/projects.js";
+import { starterDocument } from "./state/starter.js";
 import { useUiStore } from "./state/ui-store.js";
 
-export function App({ projectId }: { projectId: string }) {
+export function App({ projectId, seedStarter }: { projectId: string; seedStarter?: boolean }) {
   const onboardedKey = projectOnboardedKey(projectId);
   const hydrated = useDocumentStore((state) => state.hydrated);
+  const hydrate = useDocumentStore((state) => state.hydrate);
   const document = useDocumentStore((state) => state.document);
   const undo = useDocumentStore((state) => state.undo);
   const redo = useDocumentStore((state) => state.redo);
@@ -66,6 +68,17 @@ export function App({ projectId }: { projectId: string }) {
     };
   }, [undo, redo]);
 
+  // Demo entry (#/demo): skip the wizard and seed the starter architecture,
+  // but only into an empty project — never over existing data.
+  useEffect(() => {
+    if (!seedStarter || !hydrated) return;
+    if (document.sets.size > 0 || localStorage.getItem(onboardedKey) !== null) return;
+    const { document: starter, themes } = starterDocument();
+    hydrate(starter, themes);
+    setActiveSet("global");
+    localStorage.setItem(onboardedKey, "1");
+  }, [seedStarter, hydrated, document, onboardedKey, hydrate, setActiveSet]);
+
   // Default the active set to the first one once hydrated (or after deletes).
   const firstSet = document.sets.keys().next().value;
   useEffect(() => {
@@ -83,6 +96,14 @@ export function App({ projectId }: { projectId: string }) {
   }
 
   const needsOnboarding = document.sets.size === 0 && localStorage.getItem(onboardedKey) === null;
+  if (needsOnboarding && seedStarter) {
+    // The seeding effect above is about to hydrate the starter — avoid a wizard flash.
+    return (
+      <div className="okey-app studio">
+        <p className="empty-state">Loading…</p>
+      </div>
+    );
+  }
   if (needsOnboarding) {
     return (
       <div className="okey-app">

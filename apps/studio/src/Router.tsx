@@ -6,10 +6,11 @@ import { Dashboard } from "./components/Dashboard.js";
 interface Location {
   view: "dashboard" | "project";
   projectId?: string;
+  demo?: boolean;
 }
 
 function parseHash(hash: string): Location {
-  if (hash === "#/demo") return { view: "project", projectId: "default" };
+  if (hash === "#/demo") return { view: "project", projectId: "default", demo: true };
   const match = /^#\/project\/(.+)$/.exec(hash);
   if (match?.[1]) return { view: "project", projectId: match[1] };
   return { view: "dashboard" };
@@ -31,7 +32,7 @@ export function Router() {
   }, []);
 
   if (location.view === "project" && location.projectId) {
-    return <App projectId={location.projectId} />;
+    return <App projectId={location.projectId} seedStarter={location.demo} />;
   }
   return <Dashboard />;
 }
