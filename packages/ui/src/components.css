@@ -47,7 +47,7 @@
   color: var(--danger-600);
 }
 .okey-button--danger:hover {
-  background: hsl(0 72% 51% / 0.08);
+  background: var(--danger-bg);
 }
 
 .okey-button:disabled {
@@ -67,7 +67,7 @@
   background: var(--surface-panel);
   font: 400 var(--text-md) var(--font-sans);
   color: var(--text-primary);
-  box-shadow: inset 0 1px 2px hsl(213 25% 10% / 0.04);
+  box-shadow: inset 0 1px 2px var(--shadow-inset);
 }
 
 .okey-input--mono {
@@ -144,6 +144,13 @@
   border-radius: var(--radius-sm);
   font: 600 10px var(--font-mono);
   flex: none;
+  color: hsl(var(--okey-type-hue) 60% 40%);
+  background: hsl(var(--okey-type-hue) 70% 95%);
+}
+
+[data-color-scheme="dark"] .okey-type-icon {
+  color: hsl(var(--okey-type-hue) 58% 72%);
+  background: hsl(var(--okey-type-hue) 34% 20%);
 }
 
 /* --- ColorSwatch --------------------------------------------------------- */
@@ -227,7 +234,7 @@
 }
 
 .okey-ref-pill--broken {
-  background: hsl(0 72% 51% / 0.08);
+  background: var(--danger-bg);
   color: var(--danger-600);
 }
 

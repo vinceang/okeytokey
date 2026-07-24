@@ -32,6 +32,14 @@ The okeytokey web token editor (Vite + React 19 + Zustand).
   pattern (aria-modal, Escape closes).
 - The 10k-token virtualization benchmark (`e2e/perf.spec.ts`) runs in CI.
 
+## Appearance
+
+- **Light and dark application themes** are available from the bottom of the sidebar.
+  The preference follows the operating-system theme until the user chooses one, then
+  persists in `localStorage` across projects and reloads.
+- Appearance changes only Studio chrome. It never alters the active token theme,
+  resolved token values, previews, exports, or synced files.
+
 ## Phase 3 additions
 
 - **Diagnostics panel** (bottom drawer): live lint over the whole document —

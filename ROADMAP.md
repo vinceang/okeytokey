@@ -42,6 +42,8 @@ PRD), but these PRD commitments are missing, in priority order:
 
 ## Near-term
 
+- ~~Studio dark mode~~ — shipped as a persistent, accessible app-level preference in
+  the sidebar. It themes Studio chrome without changing document themes or token data.
 - ~~Theme groups UI + matrix expansion~~ — shipped post-v1 (ADR 0005)
 - ~~Drag-to-reorganize the token tree~~ — shipped post-v1
 - ~~Docs site with a real user guide~~ — shipped post-v1 (`docs/site/`)
