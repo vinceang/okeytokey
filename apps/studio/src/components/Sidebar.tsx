@@ -6,6 +6,7 @@ import { Button } from "@okeytokey/ui";
 
 import { cmdImportSet, cmdRemoveSet, cmdRenameSet, cmdSortSet } from "../state/commands.js";
 import { useDocumentStore } from "../state/document-store.js";
+import { readColorScheme, saveColorScheme, type ColorScheme } from "../state/color-scheme.js";
 import { useUiStore } from "../state/ui-store.js";
 import { RowMenu } from "./RowMenu.js";
 import { Wordmark } from "./Wordmark.js";
@@ -42,6 +43,7 @@ export function Sidebar() {
   const selection = useUiStore((state) => state.selection);
 
   const [importError, setImportError] = useState<string>();
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(() => readColorScheme());
   const fileInput = useRef<HTMLInputElement>(null);
 
   const addSet = () => {
@@ -247,12 +249,36 @@ export function Sidebar() {
         </a>
       </div>
 
-      {selection === undefined && (
-        <p className="sidebar-hint">
-          <strong>Note:</strong> Select a token to inspect and edit it. Press ⌘K for the command
-          palette.
-        </p>
-      )}
+      <div className="sidebar-footer">
+        {selection === undefined && (
+          <p className="sidebar-hint">
+            <strong>Note:</strong> Select a token to inspect and edit it. Press ⌘K for the command
+            palette.
+          </p>
+        )}
+
+        <div className="sidebar-appearance">
+          <span className="sidebar-appearance-icon" aria-hidden="true">
+            {colorScheme === "dark" ? "☾" : "☼"}
+          </span>
+          <span>Dark mode</span>
+          <button
+            type="button"
+            role="switch"
+            className="theme-switch"
+            aria-checked={colorScheme === "dark"}
+            aria-label="Dark mode"
+            data-testid="dark-mode-toggle"
+            onClick={() => {
+              const next = colorScheme === "dark" ? "light" : "dark";
+              setColorScheme(next);
+              saveColorScheme(next);
+            }}
+          >
+            <span className="theme-switch-thumb" />
+          </button>
+        </div>
+      </div>
     </nav>
   );
 }

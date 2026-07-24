@@ -37,10 +37,7 @@ export function TokenTypeIcon({ type }: TokenTypeIconProps) {
       className="okey-type-icon"
       title={type}
       aria-label={type}
-      style={{
-        color: `hsl(${String(icon.hue)} 60% 40%)`,
-        background: `hsl(${String(icon.hue)} 70% 95%)`,
-      }}
+      style={{ "--okey-type-hue": String(icon.hue) } as CSSProperties}
     >
       {icon.glyph}
     </span>
